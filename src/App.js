@@ -1,24 +1,40 @@
-import logo from './logo.svg';
-import './App.css';
+// src/App.js
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Home from './pages/Home';
+import Ranking from './pages/Ranking';
+import Formulario from './pages/Formulario';
+import Cadastro from './pages/Cadastro';
+import Login from './pages/Login';
+import Concursos from './pages/Concursos';
+import GabaritoDetalhe from './pages/GabaritoDetalhe';
+import Dashboard from './pages/Dashboard';
+import Admin from './pages/Admin';
+import { globalStyles } from './pages/globalStyles';
 
 function App() {
+
+  const Footer = () => (
+  <footer style={globalStyles.footer}>
+    <p>© {new Date().getFullYear()} RankSim. Todos os direitos reservados.</p>
+    <p>Simule seu sucesso.</p>
+  </footer>
+);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/ranking" element={<Ranking />} />
+        <Route path="/formulario" element={<Formulario />} />
+        <Route path="/cadastro" element={<Cadastro />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/concursos" element={<Concursos />} />
+        <Route path="/gabarito/:id" element={<GabaritoDetalhe />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/admin" element={<Admin />} />
+      </Routes>
+      <Footer />
+    </Router>
   );
 }
 
