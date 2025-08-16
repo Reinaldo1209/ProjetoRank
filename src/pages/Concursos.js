@@ -2,46 +2,35 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { PALETTE, globalStyles } from './globalStyles';
-
-const concursosMock = [
-  {
-    id: 1,
-    nome: 'Concurso Prefeitura de São Paulo 2025',
-    organizadora: 'Vunesp',
-    encerramento: '15/09/2025',
-  },
-  {
-    id: 2,
-    nome: 'Concurso TRF-3ª Região',
-    organizadora: 'FCC',
-    encerramento: '30/08/2025',
-  },
-  {
-    id: 3,
-    nome: 'Concurso Banco Central',
-    organizadora: 'Cesgranrio',
-    encerramento: '01/10/2025',
-  },
-];
+import { useConcursos } from '../context/ConcursosContext';
 
 const ConcursoCard = ({ concurso }) => (
-  <div style={globalStyles.card}>
-    <h3 style={{ marginBottom: '8px', color: PALETTE.textDark }}>{concurso.nome}</h3>
+  <div style={{ ...globalStyles.card, minHeight: 180, position: 'relative' }}>
+    {concurso.logo && (
+      <img src={concurso.logo} alt="Logo" style={{ maxWidth: 80, maxHeight: 80, position: 'absolute', top: 12, left: 12, borderRadius: 8, border: '1px solid #ccc' }} />
+    )}
+    <h3 style={{ marginBottom: '8px', color: PALETTE.textDark, marginLeft: concurso.logo ? 100 : 0 }}>{concurso.nome}</h3>
     <p><strong>Organizadora:</strong> {concurso.organizadora}</p>
     <p><strong>Encerramento:</strong> {concurso.encerramento}</p>
-    <Link to="/formulario" style={{ ...globalStyles.button, marginTop: '12px', display: 'inline-block' }}>
-      Enviar Gabarito
-    </Link>
+    <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
+      <Link to="/formulario" style={{ ...globalStyles.button, display: 'inline-block' }}>
+        Enviar Gabarito
+      </Link>
+      <Link to={`/ranking/${concurso.id}`} style={{ ...globalStyles.button, background: '#7C5C3B', color: '#fff', display: 'inline-block' }}>
+        Ver Ranking
+      </Link>
+    </div>
   </div>
 );
 
 function Concursos() {
+  const { concursos } = useConcursos();
   return (
     <div style={globalStyles.pageContent}>
       <h1 style={globalStyles.h1}>📚 Concursos Abertos</h1>
       <p style={globalStyles.subtitle}>Confira abaixo os concursos com ranking ativo. Escolha um e envie seu gabarito!</p>
       <div style={{ display: 'grid', gap: '24px', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
-        {concursosMock.map((c) => (
+        {concursos.map((c) => (
           <ConcursoCard key={c.id} concurso={c} />
         ))}
       </div>

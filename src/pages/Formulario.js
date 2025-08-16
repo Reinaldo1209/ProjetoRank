@@ -1,8 +1,10 @@
 // src/pages/Formulario.js
 import React, { useState } from 'react';
+import { usePayment } from '../context/PaymentContext';
 import { useNavigate } from 'react-router-dom';
 // Supondo que globalStyles.js está em ../styles/globalStyles.js
 import { PALETTE, globalStyles } from './globalStyles';
+import { useConcursos } from '../context/ConcursosContext';
 
 // --- ESTILOS ESPECÍFICOS DA PÁGINA ---
 const pageStyles = {
@@ -53,13 +55,21 @@ const pageStyles = {
 
 function Formulario() {
   const navigate = useNavigate();
+  const { concursos } = useConcursos();
+  const { isPaid, confirmPayment } = usePayment();
+
   
   // --- ESTADOS DO FORMULÁRIO ---
   const [formData, setFormData] = useState({
     nome: '',
     concurso: '',
-    gabarito: ''
+    gabarito: [],
   });
+  // Estado para busca e filtro de concursos
+  const [buscaConcurso, setBuscaConcurso] = useState('');
+  const concursosFiltrados = buscaConcurso
+    ? concursos.filter(c => c.nome.toLowerCase().includes(buscaConcurso.toLowerCase()))
+    : concursos;
   const [isLoading, setIsLoading] = useState(false);
   // Estado para controlar o foco de cada campo
   const [focus, setFocus] = useState({});
@@ -71,24 +81,61 @@ function Formulario() {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'gabarito' ? value.toUpperCase().replace(/[^A-Z]/g, '') : value
+      [name]: value
     }));
+  };
+
+  const handleGabaritoChange = (questaoIdx, alternativa) => {
+    setFormData(prev => {
+      const novoGabarito = [...prev.gabarito];
+      novoGabarito[questaoIdx] = alternativa;
+      return { ...prev, gabarito: novoGabarito };
+    });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     setIsLoading(true);
-    console.log("Enviando dados:", formData);
+
+    // Monta o JSON para envio
+    const concursoSelecionado = concursos.find(c => String(c.id) === String(formData.concurso));
+    const dadosEnvio = {
+      usuario: {
+        nome: formData.nome,
+        // Adicione outros dados do usuário se houver (ex: email, cpf, etc)
+      },
+      concurso: {
+        id: concursoSelecionado?.id,
+        nome: concursoSelecionado?.nome,
+        organizadora: concursoSelecionado?.organizadora,
+        encerramento: concursoSelecionado?.encerramento,
+        vagas: concursoSelecionado?.vagas,
+        qtdQuestoes: concursoSelecionado?.qtdQuestoes,
+      },
+      gabarito: formData.gabarito,
+    };
+    console.log("JSON para envio:", JSON.stringify(dadosEnvio, null, 2));
 
     // --- SIMULAÇÃO DE ENVIO PARA API ---
     setTimeout(() => {
       // Aqui você faria um POST real para a API
       console.log("Dados enviados com sucesso!");
       setIsLoading(false);
-      // Redireciona para a página de ranking após o sucesso
-      navigate('/ranking');
+      // Redireciona para a página de pagamento
+      navigate('/checkout');
     }, 1500); // Simula 1.5 segundos de espera da rede
   };
+
+  // Obter concurso selecionado
+  const concursoSelecionado = concursos.find(c => String(c.id) === String(formData.concurso));
+  const qtdQuestoes = concursoSelecionado?.qtdQuestoes ? Number(concursoSelecionado.qtdQuestoes) : 0;
+  const alternativas = ['A', 'B', 'C', 'D', 'E'];
+
+  // Agrupar questões em colunas de 20
+  const gruposQuestoes = [];
+  for (let i = 0; i < qtdQuestoes; i += 20) {
+    gruposQuestoes.push(Array.from({ length: Math.min(20, qtdQuestoes - i) }, (_, idx) => i + idx));
+  }
 
   return (
     <div style={globalStyles.pageContent}>
@@ -117,39 +164,57 @@ function Formulario() {
 
           <div style={pageStyles.formGroup}>
             <label htmlFor="concurso" style={pageStyles.label}>Selecione o Concurso</label>
-            <select
+            <input
               id="concurso"
               name="concurso"
-              value={formData.concurso}
-              onChange={handleChange}
-              onFocus={() => handleFocus('concurso')}
-              onBlur={() => handleBlur('concurso')}
-              style={{ ...pageStyles.inputBase, ...(focus.concurso && pageStyles.inputFocus) }}
-              required
-            >
-              <option value="" disabled>Escolha uma opção...</option>
-              <option value="tj-sp-2025">TJ-SP Escrevente Técnico 2025</option>
-              <option value="pm-sp-2025">PM-SP Soldado 2025</option>
-              <option value="pc-sp-2025">PC-SP Investigador 2025</option>
-            </select>
-          </div>
-
-          <div style={pageStyles.formGroup}>
-            <label htmlFor="gabarito" style={pageStyles.label}>Seu Gabarito</label>
-            <textarea
-              id="gabarito"
-              name="gabarito"
-              value={formData.gabarito}
-              onChange={handleChange}
-              onFocus={() => handleFocus('gabarito')}
-              onBlur={() => handleBlur('gabarito')}
-              placeholder="Insira as respostas em sequência, sem espaços. Ex: ABCDEABCDE..."
-              style={{ ...pageStyles.inputBase, ...(focus.gabarito && pageStyles.inputFocus), minHeight: '120px' }}
-              rows="5"
+              type="text"
+              placeholder="Digite para buscar e escolha uma opção..."
+              value={buscaConcurso}
+              onChange={e => {
+                setBuscaConcurso(e.target.value);
+                // Se o usuário escolher uma opção da lista, atualiza o id do concurso
+                const selecionado = concursos.find(c => c.nome === e.target.value);
+                setFormData(prev => ({ ...prev, concurso: selecionado ? selecionado.id : '' }));
+              }}
+              list="lista-concursos"
+              style={{ ...pageStyles.inputBase }}
               required
             />
-            <p style={pageStyles.helperText}>Somente letras de A-Z serão aceitas. Outros caracteres serão removidos.</p>
+            <datalist id="lista-concursos">
+              {(buscaConcurso.trim() === '' ? concursos : concursosFiltrados).map(c => (
+                <option key={c.id} value={c.nome} />
+              ))}
+            </datalist>
           </div>
+
+          {qtdQuestoes > 0 && (
+            <div style={{ margin: '32px 0' }}>
+              <label style={pageStyles.label}>Preencha seu gabarito:</label>
+              <div style={{ display: 'flex', gap: '32px', flexWrap: 'wrap' }}>
+                {gruposQuestoes.map((grupo, colIdx) => (
+                  <div key={colIdx} style={{ minWidth: 120 }}>
+                    {grupo.map((qIdx) => (
+                      <div key={qIdx} style={{ marginBottom: 12 }}>
+                        <span style={{ fontWeight: 600, marginRight: 8 }}>Q{qIdx + 1}</span>
+                        {alternativas.map(alt => (
+                          <label key={alt} style={{ marginRight: 8 }}>
+                            <input
+                              type="radio"
+                              name={`questao-${qIdx}`}
+                              value={alt}
+                              checked={formData.gabarito[qIdx] === alt}
+                              onChange={() => handleGabaritoChange(qIdx, alt)}
+                              required={qIdx === 0}
+                            /> {alt}
+                          </label>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <button 
             type="submit" 

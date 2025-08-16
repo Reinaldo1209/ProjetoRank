@@ -1,6 +1,10 @@
+// ...imports...
 // src/pages/Ranking.js
 import React, { useState } from 'react';
+import { usePayment } from '../context/PaymentContext';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Link } from 'react-router-dom';
+import { useConcursos } from '../context/ConcursosContext';
 // Supondo que globalStyles.js está em ../styles/globalStyles.js
 import { PALETTE, globalStyles } from './globalStyles'; 
 
@@ -109,26 +113,64 @@ const pageStyles = {
 };
 
 function Ranking() {
+  const { paidConcursoIds } = usePayment();
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const { concursos } = useConcursos();
+  const concurso = id ? concursos.find(c => String(c.id) === String(id)) : null;
   const [ranking] = useState(mockRanking);
   const [activeFilter, setActiveFilter] = useState('Ampla Concorrência');
+
+  React.useEffect(() => {
+    if (concurso && !paidConcursoIds.includes(concurso.id)) {
+      navigate('/checkout');
+    }
+  }, [concurso, paidConcursoIds, navigate]);
+
+  // Cálculo dinâmico usando dados do concurso
+  const numeroDeVagas = concurso?.vagas || 0;
+  const numeroDeQuestoes = concurso?.qtdQuestoes || 0;
+  const numeroDeInscritos = ranking.length;
+  // Autenticação real
+  const { isLoggedIn } = require('../context/AuthContext').useAuth();
+  // Simulação de inscrição (ajuste conforme lógica real)
+  const usuarioInscrito = false; // Exemplo: false = não inscrito
+  const usuario = ranking.find(c => c.nome === 'Você');
+  const suaPosicao = isLoggedIn && usuarioInscrito && usuario ? usuario.posicao : null;
+  const notaDeCorte = ranking.length >= numeroDeVagas && numeroDeVagas > 0
+    ? ranking[numeroDeVagas - 1].nota.toFixed(2)
+    : 'N/A';
 
   return (
     <div style={globalStyles.pageContent}>
       <h1 style={globalStyles.h1}>📊 Ranking do Concurso</h1>
+      {concurso && (
+        <div style={{ marginBottom: '2rem', padding: '16px', background: '#f9f6f2', borderRadius: 8 }}>
+          <h2 style={{ color: PALETTE.primary, marginBottom: 8 }}>{concurso.nome}</h2>
+          <p><strong>Organizadora:</strong> {concurso.organizadora}</p>
+          <p><strong>Encerramento:</strong> {concurso.encerramento}</p>
+          <p><strong>Vagas:</strong> {numeroDeVagas}</p>
+          <p><strong>Questões:</strong> {numeroDeQuestoes}</p>
+        </div>
+      )}
       <p>Veja sua colocação e compare seu desempenho com outros candidatos.</p>
-
-      {/* --- Resumo de Estatísticas --- */}
       <div style={pageStyles.statsContainer}>
         <div style={pageStyles.statCard}>
           <div style={pageStyles.statLabel}>Sua Posição</div>
-          <div style={pageStyles.statValue}>{suaPosicao}º</div>
+          {isLoggedIn && usuarioInscrito && suaPosicao ? (
+            <div style={pageStyles.statValue}>{suaPosicao}º</div>
+          ) : (
+            <Link to={isLoggedIn ? "/formulario" : "/login"} style={{ ...globalStyles.button, fontSize: '1rem', padding: '10px 24px', textDecoration: 'none' }}>
+              Cadastre seu Gabarito
+            </Link>
+          )}
         </div>
         <div style={pageStyles.statCard}>
-          <div style={pageStyles.statLabel}>Nota de Corte (Est.)</div>
+          <div style={pageStyles.statLabel}>MotoSerra (Est.)</div>
           <div style={pageStyles.statValue}>{notaDeCorte}</div>
         </div>
         <div style={pageStyles.statCard}>
-          <div style={pageStyles.statLabel}>Inscritos</div>
+          <div style={pageStyles.statLabel}>Combatentes</div>
           <div style={pageStyles.statValue}>{numeroDeInscritos}</div>
         </div>
       </div>
@@ -182,8 +224,8 @@ function Ranking() {
       </table>
 
       <div style={{ marginTop: '2rem', textAlign: 'center' }}>
-        <Link to="/formulario" style={globalStyles.button}>
-          Atualizar ou Inserir Gabarito
+        <Link to={isLoggedIn ? "/formulario" : "/login"} style={globalStyles.button}>
+          Cadastre seu Gabarito
         </Link>
       </div>
     </div>

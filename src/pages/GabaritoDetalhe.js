@@ -40,8 +40,18 @@ function GabaritoDetalhe() {
         <p><strong>Nome:</strong> {gabarito.nome}</p>
         <p><strong>Concurso:</strong> {gabarito.concurso}</p>
         <p><strong>Nota Calculada:</strong> {gabarito.nota}</p>
-        <p><strong>Gabarito:</strong> {gabarito.gabarito}</p>
         <p><strong>Data de Envio:</strong> {gabarito.dataEnvio}</p>
+        <div style={{ marginTop: 24 }}>
+          <label style={{ fontWeight: 600, marginBottom: 8, display: 'block' }}>Gabarito enviado:</label>
+          <div style={{ display: 'flex', gap: '32px', flexWrap: 'wrap' }}>
+            {Array.from(gabarito.gabarito).map((alt, idx) => (
+              <div key={idx} style={{ marginBottom: 12, minWidth: 80 }}>
+                <span style={{ fontWeight: 600, marginRight: 8 }}>Q{idx + 1}</span>
+                <span style={{ fontWeight: 600, color: PALETTE.primary }}>{alt}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

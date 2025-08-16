@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { PALETTE, globalStyles } from './globalStyles'; // Importa os estilos
+import { PALETTE, globalStyles } from './globalStyles';
+import { useAuth } from '../context/AuthContext';
 
-// Ícones (pode movê-los para um arquivo separado como `src/components/Icons.js` no futuro)
+// Ícone SVG genérico
 const Icon = ({ path, style }) => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginRight: '8px', ...style }}>
     <path d={path} fill="currentColor" />
   </svg>
 );
+
+// Ícones usados na Home
 const ICONS = {
   form: "M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z",
   ranking: "M16 11V3H8v8l-2.5 2.5 1.41 1.41L12 10.83l5.09 5.09L18.5 13.5 16 11zM4 21h16v-2H4v2z",
@@ -21,11 +24,11 @@ const pageStyles = {
     textAlign: 'center',
     padding: '80px 20px',
     width: '100%',
-    background: PALETTE.backgroundGradient, // Usa a paleta global
+    background: PALETTE.backgroundGradient,
   },
   heroTitle: {
-    ...globalStyles.h1, // Reutiliza o estilo de H1
-    color: PALETTE.textDark, // Pode sobrescrever se necessário
+    ...globalStyles.h1,
+    color: PALETTE.textDark,
   },
   subtitle: {
     fontSize: 'clamp(1.2rem, 3vw, 1.5rem)',
@@ -53,13 +56,13 @@ const pageStyles = {
   },
 };
 
+// Card de recurso principal
 const FeatureCard = ({ title, description, linkTo, icon }) => {
   const [isHovered, setIsHovered] = useState(false);
   const cardStyle = {
-    ...globalStyles.card, // Estilo base do card
-    ...(isHovered ? globalStyles.cardHover : {}), // Efeito de hover
+    ...globalStyles.card,
+    ...(isHovered ? globalStyles.cardHover : {}),
   };
-
   return (
     <Link to={linkTo} style={cardStyle} onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
       <div style={{ color: PALETTE.primary, marginBottom: '16px' }}>{icon}</div>
@@ -71,28 +74,10 @@ const FeatureCard = ({ title, description, linkTo, icon }) => {
 
 function Home() {
   const [isHovered, setIsHovered] = useState(false);
-  // 1. Componente Navbar
-const Navbar = () => (
-  <nav style={globalStyles.navbar}>
-    <Link to="/" style={globalStyles.brand}>
-      <Icon path={ICONS.logo} />
-      RankSim
-    </Link>
-    <div style={globalStyles.navLinks}>
-      <Link to="/formulario" style={globalStyles.navLink}>Inserir Gabarito</Link>
-      <Link to="/ranking" style={globalStyles.navLink}>Ranking</Link>
-      <Link to="/concursos" style={globalStyles.navLink}>Concursos</Link>
-      <Link to="/cadastro" style={globalStyles.navLinkCta}>Cadastrar</Link>
-    </div>
-  </nav>
-);
-
+  const { isLoggedIn } = useAuth();
 
   return (
-    // Note que não há mais o container da página aqui, pois ele será gerenciado pelo App.js
     <>
-            <Navbar />
-
       <header style={pageStyles.hero}>
         <h1 style={pageStyles.heroTitle}>🎯 Bem-vindo ao RankSim</h1>
         <p style={pageStyles.subtitle}>
@@ -113,7 +98,11 @@ const Navbar = () => (
         <h2 style={globalStyles.h2}>Recursos Principais</h2>
         <div style={pageStyles.featuresGrid}>
           <FeatureCard title="Rankings Dinâmicos" description="Veja sua colocação em tempo real." linkTo="/ranking" icon={<Icon path={ICONS.ranking} />} />
-          <FeatureCard title="Cadastro de Conta" description="Salve seu histórico e acompanhe múltiplos concursos." linkTo="/cadastro" icon={<Icon path={ICONS.register} />} />
+          {isLoggedIn ? (
+            <FeatureCard title="Meus Concursos" description="Veja os concursos que você já se cadastrou." linkTo="/meus-concursos" icon={<Icon path={ICONS.register} />} />
+          ) : (
+            <FeatureCard title="Cadastro de Conta" description="Salve seu histórico e acompanhe múltiplos concursos." linkTo="/cadastro" icon={<Icon path={ICONS.register} />} />
+          )}
           <FeatureCard title="Concursos Recentes" description="Navegue por uma lista de concursos com rankings abertos." linkTo="/concursos" icon={<Icon path={ICONS.contests} />} />
         </div>
       </main>
