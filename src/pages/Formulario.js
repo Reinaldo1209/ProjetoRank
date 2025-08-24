@@ -57,13 +57,17 @@ function Formulario() {
   const navigate = useNavigate();
   const { concursos } = useConcursos();
   const { isPaid, confirmPayment } = usePayment();
+  // Detecta se é gabarito definitivo via query param
+  const params = new URLSearchParams(window.location.search);
+  const isDefinitivo = params.get('definitivo') === 'true';
+  const concursoParam = params.get('concurso');
 
   
   // --- ESTADOS DO FORMULÁRIO ---
   const [formData, setFormData] = useState({
-    nome: '',
-    concurso: '',
-    gabarito: [],
+  nome: '',
+  concurso: concursoParam || '',
+  gabarito: [],
   });
   // Estado para busca e filtro de concursos
   const [buscaConcurso, setBuscaConcurso] = useState('');
@@ -102,7 +106,6 @@ function Formulario() {
     const dadosEnvio = {
       usuario: {
         nome: formData.nome,
-        // Adicione outros dados do usuário se houver (ex: email, cpf, etc)
       },
       concurso: {
         id: concursoSelecionado?.id,
@@ -113,17 +116,23 @@ function Formulario() {
         qtdQuestoes: concursoSelecionado?.qtdQuestoes,
       },
       gabarito: formData.gabarito,
+      definitivo: isDefinitivo,
     };
-    console.log("JSON para envio:", JSON.stringify(dadosEnvio, null, 2));
-
-    // --- SIMULAÇÃO DE ENVIO PARA API ---
-    setTimeout(() => {
-      // Aqui você faria um POST real para a API
-      console.log("Dados enviados com sucesso!");
-      setIsLoading(false);
-      // Redireciona para a página de pagamento
-      navigate('/checkout');
-    }, 1500); // Simula 1.5 segundos de espera da rede
+    if (isDefinitivo) {
+      // Simula envio especial para backend
+      setTimeout(() => {
+        console.log("Gabarito definitivo enviado:", JSON.stringify(dadosEnvio, null, 2));
+        setIsLoading(false);
+        alert('Gabarito definitivo cadastrado com sucesso!');
+        navigate('/concursos');
+      }, 1500);
+    } else {
+      setTimeout(() => {
+        console.log("JSON para envio:", JSON.stringify(dadosEnvio, null, 2));
+        setIsLoading(false);
+        navigate('/checkout');
+      }, 1500);
+    }
   };
 
   // Obter concurso selecionado
@@ -139,10 +148,18 @@ function Formulario() {
 
   return (
     <div style={globalStyles.pageContent}>
-      <div style={pageStyles.formContainer}>
+      <div style={{
+        ...pageStyles.formContainer,
+        border: isDefinitivo ? '3px solid #2d9cdb' : undefined,
+        background: isDefinitivo ? '#eaf6fb' : undefined,
+      }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <h1 style={globalStyles.h1}>📝 Enviar Gabarito</h1>
-          <p>Preencha os dados abaixo para calcular sua nota e entrar no ranking.</p>
+          <h1 style={globalStyles.h1}>{isDefinitivo ? '📝 Gabarito Definitivo' : '📝 Enviar Gabarito'}</h1>
+          {isDefinitivo ? (
+            <p style={{ color: '#2d9cdb', fontWeight: 'bold' }}>Este gabarito será usado como base para o cálculo da nota de corte do concurso.</p>
+          ) : (
+            <p>Preencha os dados abaixo para calcular sua nota e entrar no ranking.</p>
+          )}
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -221,7 +238,7 @@ function Formulario() {
             style={isLoading ? pageStyles.buttonDisabled : globalStyles.button}
             disabled={isLoading}
           >
-            {isLoading ? 'Enviando...' : 'Enviar e Ver Minha Posição'}
+            {isLoading ? 'Enviando...' : (isDefinitivo ? 'Cadastrar Gabarito Definitivo' : 'Enviar e Ver Minha Posição')}
           </button>
         </form>
       </div>

@@ -54,7 +54,12 @@ const MeusConcursos = () => {
           <tbody>
             {concursos.map(concurso => (
               <tr key={concurso.id}>
-                <td>{concurso.nome}</td>
+                <td style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  {concurso.logo && (
+                    <img src={concurso.logo} alt="Logo" style={{ width: 48, height: 48, objectFit: 'contain', borderRadius: 8, border: '1px solid #ccc' }} />
+                  )}
+                  {concurso.nome}
+                </td>
                 <td>{concurso.data}</td>
                 <td>{concurso.gabarito}</td>
                 <td>{concurso.ranking}º</td>

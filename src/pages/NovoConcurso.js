@@ -1,3 +1,4 @@
+// import { useNavigate } from 'react-router-dom';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { globalStyles } from './globalStyles';
@@ -10,9 +11,8 @@ const tiposProva = [
   
 ];
 const tiposGabarito = [
-  'Simples',
-  'Múltipla Escolha',
- 
+  'ABCD',
+  'ABCDE',
 ];
 
 const NovoConcurso = () => {
@@ -21,14 +21,15 @@ const NovoConcurso = () => {
     organizadora: '',
     encerramento: '',
     vagas: '',
-    tipoProva: '',
+    inscritos: '',
     qtdQuestoes: '',
     tipoGabarito: '',
     logo: '', // url base64
   });
+  const [editId, setEditId] = useState(null);
   const [erro, setErro] = useState('');
   const navigate = useNavigate();
-  const { concursos, adicionarConcurso, excluirConcurso } = useConcursos();
+  const { concursos, adicionarConcurso, excluirConcurso, atualizarConcurso } = useConcursos();
 
   // Simulação de verificação de admin
   const isAdmin = true; // Trocar por lógica real de autenticação
@@ -52,29 +53,54 @@ const NovoConcurso = () => {
 
   const handleSubmit = e => {
     e.preventDefault();
-    if (!form.nome || !form.organizadora || !form.encerramento || !form.vagas || !form.tipoProva || !form.qtdQuestoes || !form.tipoGabarito) {
+    if (!form.nome || !form.organizadora || !form.encerramento || !form.vagas || !form.inscritos || !form.qtdQuestoes || !form.tipoGabarito) {
       setErro('Preencha todos os campos!');
       return;
     }
     // Formatar data para dd/mm/aaaa
     let data = form.encerramento;
-    // Se vier no formato aaaa-mm-dd, converte
     if (/^\d{4}-\d{2}-\d{2}$/.test(data)) {
       const [yyyy, mm, dd] = data.split('-');
       data = `${dd}/${mm}/${yyyy}`;
     }
-    adicionarConcurso({
-      nome: form.nome,
-      organizadora: form.organizadora,
-      encerramento: data,
-      vagas: form.vagas,
-      tipoProva: form.tipoProva,
-      qtdQuestoes: form.qtdQuestoes,
-      tipoGabarito: form.tipoGabarito,
-      logo: form.logo,
+    if (editId) {
+      atualizarConcurso({
+        id: editId,
+        nome: form.nome,
+        organizadora: form.organizadora,
+        encerramento: data,
+        vagas: form.vagas,
+        inscritos: form.inscritos,
+        qtdQuestoes: form.qtdQuestoes,
+        tipoGabarito: form.tipoGabarito,
+        logo: form.logo,
+      });
+      alert('Concurso atualizado com sucesso!');
+    } else {
+      adicionarConcurso({
+        nome: form.nome,
+        organizadora: form.organizadora,
+        encerramento: data,
+        vagas: form.vagas,
+        inscritos: form.inscritos,
+        qtdQuestoes: form.qtdQuestoes,
+        tipoGabarito: form.tipoGabarito,
+        logo: form.logo,
+      });
+      alert('Concurso cadastrado com sucesso!');
+    }
+    setForm({
+      nome: '',
+      organizadora: '',
+      encerramento: '',
+      vagas: '',
+      inscritos: '',
+      qtdQuestoes: '',
+      tipoGabarito: '',
+      logo: '',
     });
-    alert('Concurso cadastrado com sucesso!');
-    navigate('/concursos');
+    setEditId(null);
+    setErro('');
   };
 
   return (
@@ -105,13 +131,11 @@ const NovoConcurso = () => {
           <input type="number" name="vagas" value={form.vagas} onChange={handleChange} style={inputStyle} min={1} />
         </label>
         <label>
-          Tipo de Prova:
-          <select name="tipoProva" value={form.tipoProva} onChange={handleChange} style={inputStyle}>
-            <option value="">Selecione</option>
-            {tiposProva.map(tp => <option key={tp} value={tp}>{tp}</option>)}
-          </select>
+          Número de Inscritos:
+          <input type="number" name="inscritos" value={form.inscritos} onChange={handleChange} style={inputStyle} min={0} />
         </label>
         <label>
+          {/* Campo Tipo de Prova removido */}
           Quantidade de Questões:
           <input type="number" name="qtdQuestoes" value={form.qtdQuestoes} onChange={handleChange} style={inputStyle} min={1} />
         </label>
@@ -137,10 +161,26 @@ const NovoConcurso = () => {
             <p><strong>Organizadora:</strong> {c.organizadora}</p>
             <p><strong>Encerramento:</strong> {c.encerramento}</p>
             <p><strong>Vagas:</strong> {c.vagas}</p>
-            <p><strong>Tipo de Prova:</strong> {c.tipoProva}</p>
+            <p><strong>Inscritos:</strong> {c.inscritos}</p>
+            {/* Campo Tipo de Prova removido */}
             <p><strong>Questões:</strong> {c.qtdQuestoes}</p>
             <p><strong>Tipo de Gabarito:</strong> {c.tipoGabarito}</p>
             <button onClick={() => excluirConcurso(c.id)} style={{ position: 'absolute', top: 12, right: 12, background: '#c00', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 12px', cursor: 'pointer' }}>Excluir</button>
+            <button onClick={() => {
+              setEditId(c.id);
+              setForm({
+                nome: c.nome || '',
+                organizadora: c.organizadora || '',
+                encerramento: c.encerramento || '',
+                vagas: c.vagas || '',
+                inscritos: c.inscritos || '',
+                qtdQuestoes: c.qtdQuestoes || '',
+                tipoGabarito: c.tipoGabarito || '',
+                logo: c.logo || '',
+              });
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }} style={{ position: 'absolute', top: 12, right: 90, background: '#f7b731', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 12px', cursor: 'pointer' }}>Editar</button>
+            <button onClick={() => navigate(`/formulario?concurso=${c.id}&definitivo=true`)} style={{ position: 'absolute', top: 12, right: 180, background: '#2d9cdb', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 12px', cursor: 'pointer' }}>Gabarito Definitivo</button>
           </div>
         ))}
       </div>

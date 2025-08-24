@@ -2,6 +2,7 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import { PALETTE, globalStyles } from './globalStyles';
+import { useConcursos } from '../context/ConcursosContext';
 
 // Simulação de dados para um gabarito específico
 const gabaritosMock = [
@@ -26,19 +27,21 @@ const gabaritosMock = [
 function GabaritoDetalhe() {
   const { id } = useParams();
   const gabarito = gabaritosMock.find((g) => g.id.toString() === id);
-
-  if (!gabarito) {
-    return <div style={globalStyles.pageContent}><h2 style={globalStyles.h2}>Gabarito não encontrado</h2></div>;
-  }
-
+  const { concursos } = useConcursos();
+  const concursoInfo = concursos.find(c => c.nome === gabarito.concurso);
   return (
     <div style={globalStyles.pageContent}>
       <h1 style={globalStyles.h1}>📄 Detalhes do Gabarito</h1>
       <p style={globalStyles.subtitle}>Veja abaixo as informações completas do seu envio.</p>
 
       <div style={globalStyles.card}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
+          {concursoInfo?.logo && (
+            <img src={concursoInfo.logo} alt="Logo" style={{ width: 56, height: 56, objectFit: 'contain', borderRadius: 8, border: '1px solid #ccc' }} />
+          )}
+          <span style={{ fontWeight: 600, fontSize: 18 }}>{gabarito.concurso}</span>
+        </div>
         <p><strong>Nome:</strong> {gabarito.nome}</p>
-        <p><strong>Concurso:</strong> {gabarito.concurso}</p>
         <p><strong>Nota Calculada:</strong> {gabarito.nota}</p>
         <p><strong>Data de Envio:</strong> {gabarito.dataEnvio}</p>
         <div style={{ marginTop: 24 }}>

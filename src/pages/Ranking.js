@@ -145,8 +145,11 @@ function Ranking() {
     <div style={globalStyles.pageContent}>
       <h1 style={globalStyles.h1}>📊 Ranking do Concurso</h1>
       {concurso && (
-        <div style={{ marginBottom: '2rem', padding: '16px', background: '#f9f6f2', borderRadius: 8 }}>
-          <h2 style={{ color: PALETTE.primary, marginBottom: 8 }}>{concurso.nome}</h2>
+        <div style={{ marginBottom: '2rem', padding: '16px', background: '#f9f6f2', borderRadius: 8, position: 'relative' }}>
+          {concurso.logo && (
+            <img src={concurso.logo} alt="Logo" style={{ maxWidth: 80, maxHeight: 80, position: 'absolute', top: 12, left: 12, borderRadius: 8, border: '1px solid #ccc' }} />
+          )}
+          <h2 style={{ color: PALETTE.primary, marginBottom: 8, marginLeft: concurso.logo ? 100 : 0 }}>{concurso.nome}</h2>
           <p><strong>Organizadora:</strong> {concurso.organizadora}</p>
           <p><strong>Encerramento:</strong> {concurso.encerramento}</p>
           <p><strong>Vagas:</strong> {numeroDeVagas}</p>

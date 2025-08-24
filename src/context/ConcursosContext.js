@@ -41,8 +41,12 @@ export function ConcursosProvider({ children }) {
     setConcursos(prev => prev.filter(c => c.id !== id));
   }
 
+  function atualizarConcurso(concursoEditado) {
+    setConcursos(prev => prev.map(c => c.id === concursoEditado.id ? { ...c, ...concursoEditado } : c));
+  }
+
   return (
-    <ConcursosContext.Provider value={{ concursos, adicionarConcurso, excluirConcurso }}>
+    <ConcursosContext.Provider value={{ concursos, adicionarConcurso, excluirConcurso, atualizarConcurso }}>
       {children}
     </ConcursosContext.Provider>
   );
