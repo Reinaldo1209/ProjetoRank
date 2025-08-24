@@ -4,7 +4,7 @@ const PaymentContext = createContext();
 
 export function PaymentProvider({ children }) {
   // Estado: se o pagamento foi confirmado
-  const [isPaid, setIsPaid] = useState(false);
+  const [isPaid, setIsPaid] = useState(true); // alterar o estado de pagamento para testes
   // Salva concursos que o usuário já pagou e cadastrou gabarito
   const [paidConcursoIds, setPaidConcursoIds] = useState([]);
 

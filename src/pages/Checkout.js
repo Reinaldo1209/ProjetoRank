@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { usePayment } from '../context/PaymentContext';
 import axios from 'axios';
 
 const PIX_API_URL = 'https://api.exemplo.com/pix'; // Troque pela URL real da API
 
 function Checkout() {
+  const { confirmPayment, isPaid } = usePayment();
   const [loading, setLoading] = useState(false);
   const [pixData, setPixData] = useState(null);
   const [error, setError] = useState(null);
@@ -29,7 +31,7 @@ function Checkout() {
   return (
     <div style={{ maxWidth: 400, margin: '40px auto', padding: 24, background: '#fff', borderRadius: 12, boxShadow: '0 2px 16px #eee' }}>
       <h1>Checkout</h1>
-  <p>Valor: <strong>R$ 5,00</strong> por concurso cadastrado</p>
+      <p>Valor: <strong>R$ 5,00</strong> por concurso cadastrado</p>
       <button onClick={handleCheckout} disabled={loading || pixData} style={{ padding: '12px 24px', fontSize: '1.1rem', background: '#00B37E', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer' }}>
         {loading ? 'Gerando cobrança...' : 'Gerar QR Code PIX'}
       </button>
@@ -42,6 +44,15 @@ function Checkout() {
           <textarea value={pixData.copiaECola} readOnly style={{ width: '100%', fontSize: '1rem', marginBottom: 16 }} />
           <p><strong>Chave PIX:</strong> {pixData.chavePix}</p>
           <p style={{ color: '#00B37E', fontWeight: 'bold' }}>Após o pagamento, sua assinatura será ativada automaticamente.</p>
+          {/* Botão para simular pagamento e ativar assinatura */}
+          {!isPaid && (
+            <button onClick={() => confirmPayment()} style={{ marginTop: 24, padding: '12px 24px', fontSize: '1rem', background: '#2ecc71', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer' }}>
+              Simular pagamento e ativar assinatura
+            </button>
+          )}
+          {isPaid && (
+            <p style={{ color: '#2ecc71', fontWeight: 'bold', marginTop: 16 }}>Assinatura ativada! Você já pode acessar os concursos.</p>
+          )}
         </div>
       )}
     </div>

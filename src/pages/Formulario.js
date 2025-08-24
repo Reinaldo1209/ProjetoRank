@@ -65,10 +65,22 @@ function Formulario() {
   
   // --- ESTADOS DO FORMULÁRIO ---
   const [formData, setFormData] = useState({
-  nome: '',
-  concurso: concursoParam || '',
-  gabarito: [],
+    nome: '',
+    concurso: concursoParam || '',
+    gabarito: [],
+    avatar: '', // url base64 ou nome do avatar pré-definido
   });
+  const [avatarPreview, setAvatarPreview] = useState('');
+  const avatarList = [
+    '/avatars/avatar1.png',
+    '/avatars/avatar2.png',
+    '/avatars/avatar3.png',
+    '/avatars/avatar4.png',
+    '/avatars/avatar5.png',
+    '/avatars/avatar6.png',
+    '/avatars/avatar7.png',
+    '/avatars/avatar8.png',
+  ];
   // Estado para busca e filtro de concursos
   const [buscaConcurso, setBuscaConcurso] = useState('');
   const concursosFiltrados = buscaConcurso
@@ -82,11 +94,18 @@ function Formulario() {
   const handleBlur = (field) => setFocus({ ...focus, [field]: false });
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    const { name, value, files } = e.target;
+    if (name === 'avatar' && files && files[0]) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData(prev => ({ ...prev, avatar: reader.result }));
+        setAvatarPreview(reader.result);
+      };
+      reader.readAsDataURL(files[0]);
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+      if (name === 'avatar') setAvatarPreview(value);
+    }
   };
 
   const handleGabaritoChange = (questaoIdx, alternativa) => {
@@ -106,6 +125,7 @@ function Formulario() {
     const dadosEnvio = {
       usuario: {
         nome: formData.nome,
+        avatar: formData.avatar,
       },
       concurso: {
         id: concursoSelecionado?.id,
@@ -130,7 +150,12 @@ function Formulario() {
       setTimeout(() => {
         console.log("JSON para envio:", JSON.stringify(dadosEnvio, null, 2));
         setIsLoading(false);
-        navigate('/checkout');
+        if (isPaid) {
+          // Redireciona para o ranking do concurso cadastrado
+          navigate(`/ranking/${concursoSelecionado?.id}`);
+        } else {
+          navigate('/checkout');
+        }
       }, 1500);
     }
   };
@@ -163,6 +188,43 @@ function Formulario() {
         </div>
 
         <form onSubmit={handleSubmit}>
+          <div style={pageStyles.formGroup}>
+            <label style={pageStyles.label}>Selecione um Guerreiro</label>
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 12 }}>
+              {avatarList.map((avatar, idx) => (
+                <label key={avatar} style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <input
+                    type="radio"
+                    name="avatar"
+                    value={avatar}
+                    checked={formData.avatar === avatar}
+                    onChange={handleChange}
+                    style={{ marginBottom: 4 }}
+                  />
+                  <div style={{ width: 56, height: 56, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', borderRadius: '50%', border: formData.avatar === avatar ? '2px solid #2d9cdb' : '1px solid #ccc', overflow: 'hidden' }}>
+                    <img src={avatar} alt={`Avatar ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                  </div>
+                </label>
+              ))}
+              <label style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <input
+                  type="file"
+                  name="avatar"
+                  accept="image/*"
+                  onChange={handleChange}
+                  style={{ display: 'none' }}
+                  id="avatar-upload"
+                />
+                <span style={{ fontSize: 12, marginBottom: 4 }}>Escolher imagem</span>
+                <button type="button" onClick={() => document.getElementById('avatar-upload').click()} style={{ padding: '4px 12px', borderRadius: 6, border: '1px solid #ccc', background: '#f7f7f7', cursor: 'pointer' }}>Upload</button>
+                {avatarPreview && (
+                  <div style={{ width: 120, height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', borderRadius: '50%', border: '2px solid #2d9cdb', overflow: 'hidden', marginTop: 6 }}>
+                    <img src={avatarPreview} alt="Avatar preview" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                  </div>
+                )}
+              </label>
+            </div>
+          </div>
           <div style={pageStyles.formGroup}>
             <label htmlFor="nome" style={pageStyles.label}>Seu Nome ou Apelido</label>
             <input

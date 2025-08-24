@@ -113,7 +113,7 @@ const pageStyles = {
 };
 
 function Ranking() {
-  const { paidConcursoIds } = usePayment();
+  const { paidConcursoIds, isPaid } = usePayment();
   const navigate = useNavigate();
   const { id } = useParams();
   const { concursos } = useConcursos();
@@ -122,10 +122,11 @@ function Ranking() {
   const [activeFilter, setActiveFilter] = useState('Ampla Concorrência');
 
   React.useEffect(() => {
-    if (concurso && !paidConcursoIds.includes(concurso.id)) {
+    // Se o pagamento global está ativo, permite acesso ao ranking
+    if (concurso && !isPaid && !paidConcursoIds.includes(concurso.id)) {
       navigate('/checkout');
     }
-  }, [concurso, paidConcursoIds, navigate]);
+  }, [concurso, paidConcursoIds, isPaid, navigate]);
 
   // Cálculo dinâmico usando dados do concurso
   const numeroDeVagas = concurso?.vagas || 0;
