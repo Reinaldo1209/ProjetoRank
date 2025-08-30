@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { usePayment } from '../context/PaymentContext';
 import axios from 'axios';
 
-const PIX_API_URL = 'https://api.exemplo.com/pix'; // Troque pela URL real da API
+const PIX_API_URL = '#'; // Trocar pela URL real da API
 
 function Checkout() {
   const { confirmPayment, isPaid } = usePayment();

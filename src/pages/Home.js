@@ -79,7 +79,7 @@ function Home() {
   return (
     <>
       <header style={pageStyles.hero}>
-        <h1 style={pageStyles.heroTitle}>🎯 Bem-vindo ao RankSim</h1>
+        <h1 style={pageStyles.heroTitle}>🎯 Bem-vindo ao Rank.Ou</h1>
         <p style={pageStyles.subtitle}>
           A sua plataforma completa para simular e acompanhar seu desempenho em concursos públicos.
         </p>
@@ -97,7 +97,7 @@ function Home() {
       <main style={globalStyles.pageContent}>
         <h2 style={globalStyles.h2}>Recursos Principais</h2>
         <div style={pageStyles.featuresGrid}>
-          <FeatureCard title="Rankings Dinâmicos" description="Veja sua colocação em tempo real." linkTo="/ranking" icon={<Icon path={ICONS.ranking} />} />
+          <FeatureCard title="Solicitar abertura de ranking" description="Peça para abrir um ranking para um concurso que ainda não está na plataforma." linkTo="/solicitar-ranking" icon={<Icon path={ICONS.ranking} />} />
           {isLoggedIn ? (
             <FeatureCard title="Meus Concursos" description="Veja os concursos que você já se cadastrou." linkTo="/meus-concursos" icon={<Icon path={ICONS.register} />} />
           ) : (

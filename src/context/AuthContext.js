@@ -4,7 +4,7 @@ const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   // Simulação: troque por lógica real depois
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // Funções para login/logout (mock)
   function login() { setIsLoggedIn(true); }

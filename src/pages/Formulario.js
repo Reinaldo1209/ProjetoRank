@@ -1,6 +1,7 @@
 // src/pages/Formulario.js
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { usePayment } from '../context/PaymentContext';
+import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 // Supondo que globalStyles.js está em ../styles/globalStyles.js
 import { PALETTE, globalStyles } from './globalStyles';
@@ -54,9 +55,17 @@ const pageStyles = {
 };
 
 function Formulario() {
+  const { isLoggedIn } = useAuth();
   const navigate = useNavigate();
+
+  React.useEffect(() => {
+    if (!isLoggedIn) {
+      navigate('/login');
+    }
+  }, [isLoggedIn, navigate]);
+
   const { concursos } = useConcursos();
-  const { isPaid, confirmPayment } = usePayment();
+  const { paidConcursoIds, confirmPayment } = usePayment();
   // Detecta se é gabarito definitivo via query param
   const params = new URLSearchParams(window.location.search);
   const isDefinitivo = params.get('definitivo') === 'true';
@@ -89,6 +98,9 @@ function Formulario() {
   const [isLoading, setIsLoading] = useState(false);
   // Estado para controlar o foco de cada campo
   const [focus, setFocus] = useState({});
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [highlightedIdx, setHighlightedIdx] = useState(-1);
+  const inputRef = useRef();
 
   const handleFocus = (field) => setFocus({ ...focus, [field]: true });
   const handleBlur = (field) => setFocus({ ...focus, [field]: false });
@@ -131,7 +143,7 @@ function Formulario() {
         id: concursoSelecionado?.id,
         nome: concursoSelecionado?.nome,
         organizadora: concursoSelecionado?.organizadora,
-        encerramento: concursoSelecionado?.encerramento,
+        dataProva: concursoSelecionado?.dataProva,
         vagas: concursoSelecionado?.vagas,
         qtdQuestoes: concursoSelecionado?.qtdQuestoes,
       },
@@ -147,10 +159,12 @@ function Formulario() {
         navigate('/concursos');
       }, 1500);
     } else {
+      // Variável booleana para simular admin (troque para true para testar)
+  const isAdmin = false;
       setTimeout(() => {
         console.log("JSON para envio:", JSON.stringify(dadosEnvio, null, 2));
         setIsLoading(false);
-        if (isPaid) {
+        if (isAdmin || paidConcursoIds.includes(concursoSelecionado?.id)) {
           // Redireciona para o ranking do concurso cadastrado
           navigate(`/ranking/${concursoSelecionado?.id}`);
         } else {
@@ -170,6 +184,23 @@ function Formulario() {
   for (let i = 0; i < qtdQuestoes; i += 20) {
     gruposQuestoes.push(Array.from({ length: Math.min(20, qtdQuestoes - i) }, (_, idx) => i + idx));
   }
+
+  // Autocomplete avançado: navegação por teclado
+  const handleInputKeyDown = (e) => {
+    if (!showSuggestions || concursosFiltrados.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      setHighlightedIdx(idx => Math.min(idx + 1, concursosFiltrados.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      setHighlightedIdx(idx => Math.max(idx - 1, 0));
+    } else if (e.key === 'Enter' && highlightedIdx >= 0) {
+      const concursoSelecionado = concursosFiltrados[highlightedIdx];
+      setFormData(prev => ({ ...prev, concurso: concursoSelecionado.id }));
+      setBuscaConcurso(concursoSelecionado.nome);
+      setShowSuggestions(false);
+      setHighlightedIdx(-1);
+      inputRef.current.blur();
+    }
+  };
 
   return (
     <div style={globalStyles.pageContent}>
@@ -244,26 +275,80 @@ function Formulario() {
           <div style={pageStyles.formGroup}>
             <label htmlFor="concurso" style={pageStyles.label}>Selecione o Concurso</label>
             <input
-              id="concurso"
-              name="concurso"
+              id="concurso-busca"
               type="text"
-              placeholder="Digite para buscar e escolha uma opção..."
+              placeholder="Digite para buscar..."
               value={buscaConcurso}
               onChange={e => {
                 setBuscaConcurso(e.target.value);
-                // Se o usuário escolher uma opção da lista, atualiza o id do concurso
-                const selecionado = concursos.find(c => c.nome === e.target.value);
-                setFormData(prev => ({ ...prev, concurso: selecionado ? selecionado.id : '' }));
+                setShowSuggestions(true);
+                setHighlightedIdx(-1);
               }}
-              list="lista-concursos"
-              style={{ ...pageStyles.inputBase }}
-              required
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+              onKeyDown={handleInputKeyDown}
+              style={pageStyles.inputBase}
+              autoComplete="off"
+              ref={inputRef}
             />
-            <datalist id="lista-concursos">
-              {(buscaConcurso.trim() === '' ? concursos : concursosFiltrados).map(c => (
-                <option key={c.id} value={c.nome} />
-              ))}
-            </datalist>
+            {showSuggestions && concursosFiltrados.length > 0 && (
+              <ul style={{
+                listStyle: 'none',
+                margin: 0,
+                padding: 0,
+                border: '1px solid #eee',
+                borderRadius: 8,
+                background: '#fff',
+                maxHeight: 180,
+                overflowY: 'auto',
+                position: 'absolute',
+                zIndex: 10,
+                width: '100%',
+                boxShadow: '0 2px 8px #eee',
+              }}>
+                {concursosFiltrados.map((c, idx) => (
+                  <li
+                    key={c.id}
+                    onMouseDown={() => {
+                      setFormData(prev => ({ ...prev, concurso: c.id }));
+                      setBuscaConcurso(c.nome);
+                      setShowSuggestions(false);
+                      setHighlightedIdx(-1);
+                    }}
+                    style={{
+                      padding: '10px 16px',
+                      background: highlightedIdx === idx ? '#eaf6fb' : '#fff',
+                      color: highlightedIdx === idx ? PALETTE.primary : PALETTE.textDark,
+                      cursor: 'pointer',
+                      fontWeight: highlightedIdx === idx ? 'bold' : 'normal',
+                    }}
+                    onMouseEnter={() => setHighlightedIdx(idx)}
+                  >
+                    {c.nome}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {showSuggestions && concursosFiltrados.length === 0 && (
+              <div style={{ color: '#e74c3c', marginTop: 8 }}>Nenhum concurso encontrado.</div>
+            )}
+          </div>
+          <div style={pageStyles.formGroup}>
+            <label htmlFor="tipoConcorrencia" style={pageStyles.label}>Tipo de Concorrência</label>
+            <select
+              id="tipoConcorrencia"
+              name="tipoConcorrencia"
+              value={formData.tipoConcorrencia || ''}
+              onChange={handleChange}
+              style={pageStyles.inputBase}
+              required
+            >
+              <option value="">Selecione...</option>
+              <option value="Ampla">Ampla</option>
+              <option value="PPP">PPP</option>
+              <option value="PCD">PCD</option>
+              <option value="Indigena">Indígena</option>
+            </select>
           </div>
 
           {qtdQuestoes > 0 && (

@@ -22,13 +22,18 @@ export const globalStyles = {
     display: 'flex',
     flexDirection: 'column',
     minHeight: '100vh',
+    width: '100vw',
+    overflowX: 'hidden',
+    boxSizing: 'border-box',
   },
   pageContent: {
     flex: '1', // Faz o conteúdo principal crescer e empurrar o footer para baixo
-    width: '100%',
-    maxWidth: '1200px', // Limita a largura máxima do conteúdo
+    width: '100vw',
+    maxWidth: '100vw', // Limita a largura máxima ao tamanho da tela
     margin: '0 auto',   // Centraliza o conteúdo
     padding: '40px 20px',
+    boxSizing: 'border-box',
+    overflowX: 'hidden',
   },
 
   // Componente: Navbar

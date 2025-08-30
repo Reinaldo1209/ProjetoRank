@@ -12,6 +12,7 @@ import Admin from './pages/Admin';
 import MeusConcursos from './pages/MeusConcursos';
 import NovoConcurso from './pages/NovoConcurso';
 import Checkout from './pages/Checkout';
+import SolicitarRanking from './pages/SolicitarRanking';
 import { globalStyles } from './pages/globalStyles';
 import Header from './components/Header';
 import { ConcursosProvider } from './context/ConcursosContext';
@@ -47,6 +48,7 @@ function App() {
               <Route path="/meus-concursos" element={<MeusConcursos />} />
               <Route path="/novo-concurso" element={<NovoConcurso />} />
               <Route path="/checkout" element={<Checkout />} />
+              <Route path="/solicitar-ranking" element={<SolicitarRanking />} />
             </Routes>
             <Footer />
           </Router>

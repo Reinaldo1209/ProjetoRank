@@ -10,16 +10,16 @@ import { PALETTE, globalStyles } from './globalStyles';
 
 // --- DADOS MOCK (MAIS COMPLETOS) ---
 const mockRanking = [
-  { nome: 'João V. Silva', nota: 91.0, posicao: 1 },
-  { nome: 'Ana C. Souza', nota: 88.5, posicao: 2 },
-  { nome: 'Carlos F. Lima', nota: 87.0, posicao: 3 },
-  { nome: 'Mariana B. Costa', nota: 85.0, posicao: 4 },
-  { nome: 'Você', nota: 83.5, posicao: 5 },
-  { nome: 'Lucas R. Almeida', nota: 82.0, posicao: 6 },
-  { nome: 'Beatriz S. Oliveira', nota: 81.5, posicao: 7 },
-  { nome: 'Rafael P. Martins', nota: 79.0, posicao: 8 },
-  { nome: 'Fernanda G. Rocha', nota: 78.5, posicao: 9 },
-  { nome: 'Thiago L. Pereira', nota: 77.0, posicao: 10 },
+  { nome: 'João V. Silva', nota: 91.0, posicao: 1, avatar: '/avatars/avatar1.png' },
+  { nome: 'Ana C. Souza', nota: 88.5, posicao: 2, avatar: '/avatars/avatar2.png' },
+  { nome: 'Carlos F. Lima', nota: 87.0, posicao: 3, avatar: '/avatars/avatar3.png' },
+  { nome: 'Mariana B. Costa', nota: 85.0, posicao: 4, avatar: '/avatars/avatar4.png' },
+  { nome: 'Você', nota: 83.5, posicao: 5, avatar: '/avatars/avatar5.png' },
+  { nome: 'Lucas R. Almeida', nota: 82.0, posicao: 6, avatar: '/avatars/avatar6.png' },
+  { nome: 'Beatriz S. Oliveira', nota: 81.5, posicao: 7, avatar: '/avatars/avatar7.png' },
+  { nome: 'Rafael P. Martins', nota: 79.0, posicao: 8, avatar: '/avatars/avatar8.png' },
+  { nome: 'Fernanda G. Rocha', nota: 78.5, posicao: 9, avatar: '/avatars/avatar1.png' },
+  { nome: 'Thiago L. Pereira', nota: 77.0, posicao: 10, avatar: '/avatars/avatar2.png' },
 ];
 
 // --- LÓGICA DE CÁLCULO ---
@@ -113,20 +113,24 @@ const pageStyles = {
 };
 
 function Ranking() {
-  const { paidConcursoIds, isPaid } = usePayment();
+  const { paidConcursoIds } = usePayment();
   const navigate = useNavigate();
   const { id } = useParams();
   const { concursos } = useConcursos();
   const concurso = id ? concursos.find(c => String(c.id) === String(id)) : null;
   const [ranking] = useState(mockRanking);
   const [activeFilter, setActiveFilter] = useState('Ampla Concorrência');
+  // Variável booleana para simular admin (troque para true para testar)
+  const isAdmin = false;
 
   React.useEffect(() => {
-    // Se o pagamento global está ativo, permite acesso ao ranking
-    if (concurso && !isPaid && !paidConcursoIds.includes(concurso.id)) {
+    // Admin pode acessar qualquer ranking
+    if (isAdmin) return;
+    // Usuário comum só acessa ranking se pagou por este concurso
+    if (concurso && !paidConcursoIds.includes(concurso.id)) {
       navigate('/checkout');
     }
-  }, [concurso, paidConcursoIds, isPaid, navigate]);
+  }, [concurso, paidConcursoIds, navigate, isAdmin]);
 
   // Cálculo dinâmico usando dados do concurso
   const numeroDeVagas = concurso?.vagas || 0;
@@ -146,18 +150,59 @@ function Ranking() {
     <div style={globalStyles.pageContent}>
       <h1 style={globalStyles.h1}>📊 Ranking do Concurso</h1>
       {concurso && (
-        <div style={{ marginBottom: '2rem', padding: '16px', background: '#f9f6f2', borderRadius: 8, position: 'relative' }}>
+        <div style={{ marginBottom: '2rem', padding: '16px', background: '#f9f6f2', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
           {concurso.logo && (
-            <img src={concurso.logo} alt="Logo" style={{ maxWidth: 80, maxHeight: 80, position: 'absolute', top: 12, left: 12, borderRadius: 8, border: '1px solid #ccc' }} />
+            <img src={concurso.logo} alt="Logo" style={{ maxWidth: 80, maxHeight: 80, borderRadius: 8, border: '1px solid #ccc', flexShrink: 0 }} />
           )}
-          <h2 style={{ color: PALETTE.primary, marginBottom: 8, marginLeft: concurso.logo ? 100 : 0 }}>{concurso.nome}</h2>
-          <p><strong>Organizadora:</strong> {concurso.organizadora}</p>
-          <p><strong>Encerramento:</strong> {concurso.encerramento}</p>
-          <p><strong>Vagas:</strong> {numeroDeVagas}</p>
-          <p><strong>Questões:</strong> {numeroDeQuestoes}</p>
+          <div style={{ minWidth: 220 }}>
+            <h2 style={{ color: PALETTE.primary, marginBottom: 8 }}>{concurso.nome}</h2>
+            <p><strong>Organizadora:</strong> {concurso.organizadora}</p>
+            <p><strong>Data da Prova:</strong> {concurso.dataProva}</p>
+            <p><strong>Vagas:</strong> {numeroDeVagas}</p>
+            <p><strong>Questões:</strong> {numeroDeQuestoes}</p>
+          </div>
         </div>
       )}
       <p>Veja sua colocação e compare seu desempenho com outros candidatos.</p>
+      <div style={{ display: 'flex', gap: 32, margin: '24px 0', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center' }}>
+        {concursos.map((c) => (
+          <div key={c.id} style={{ textAlign: 'center', width: 100, minWidth: 100, marginBottom: 12 }}>
+            <button
+              onClick={() => navigate(`/ranking/${c.id}`)}
+              style={{
+                border: String(c.id) === String(concurso?.id) ? '2px solid #2d9cdb' : '1px solid #ccc',
+                background: String(c.id) === String(concurso?.id) ? '#eaf6fb' : '#fff',
+                borderRadius: 8,
+                padding: 8,
+                cursor: 'pointer',
+                boxShadow: '0 2px 8px #eee',
+                marginBottom: 8,
+                width: 80,
+                height: 80,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              disabled={String(c.id) === String(concurso?.id)}
+              title={c.nome}
+            >
+              {c.logo ? (
+                <img src={c.logo} alt={c.nome} style={{ maxWidth: 64, maxHeight: 64, borderRadius: 6 }} />
+              ) : (
+                <span style={{ fontSize: 12, color: '#aaa' }}>Sem logo</span>
+              )}
+            </button>
+            <div style={{ fontSize: 12, color: String(c.id) === String(concurso?.id) ? PALETTE.primary : PALETTE.textMedium, fontWeight: String(c.id) === String(concurso?.id) ? 'bold' : 'normal', wordBreak: 'break-word', whiteSpace: 'pre-line', maxWidth: 90, lineHeight: 1.2 }}>{c.nome}</div>
+            {/* Se não tem acesso ao ranking desse concurso */}
+            {String(c.id) !== String(concurso?.id) && !isAdmin && !paidConcursoIds.includes(c.id) && (
+              <div style={{ marginTop: 8, color: '#e74c3c', fontSize: 13 }}>
+                Você não está participando deste ranking.<br />
+                <Link to="/formulario" style={{ ...globalStyles.button, fontSize: '0.9rem', marginTop: 6 }}>Participar</Link>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
       <div style={pageStyles.statsContainer}>
         <div style={pageStyles.statCard}>
           <div style={pageStyles.statLabel}>Sua Posição</div>
@@ -193,7 +238,21 @@ function Ranking() {
           style={activeFilter === 'Cotas (PCD)' ? {...pageStyles.subNavLink, ...pageStyles.subNavLinkActive} : pageStyles.subNavLink} 
           onClick={(e) => { e.preventDefault(); setActiveFilter('Cotas (PCD)'); }}
         >
-          Cotas (PCD)
+           PCD
+        </a>
+        <a 
+          href="#/" 
+          style={activeFilter === 'PPP' ? {...pageStyles.subNavLink, ...pageStyles.subNavLinkActive} : pageStyles.subNavLink} 
+          onClick={(e) => { e.preventDefault(); setActiveFilter('PPP'); }}
+        >
+          PPP
+        </a>
+        <a 
+          href="#/" 
+          style={activeFilter === 'Indígena' ? {...pageStyles.subNavLink, ...pageStyles.subNavLinkActive} : pageStyles.subNavLink} 
+          onClick={(e) => { e.preventDefault(); setActiveFilter('Indígena'); }}
+        >
+          Indígena
         </a>
       </div>
 
@@ -218,7 +277,12 @@ function Ranking() {
 
             return (
               <tr key={index} style={rowStyle}>
-                <td style={pageStyles.td}>{item.posicao}º</td>
+                <td style={pageStyles.td}>
+                  {item.posicao}º
+                  {item.avatar && (
+                    <img src={item.avatar} alt="Avatar" style={{ width: 32, height: 32, borderRadius: '50%', marginLeft: 100, verticalAlign: 'middle', border: isUser ? '2px solid #2d9cdb' : '1px solid #ccc' }} />
+                  )}
+                </td>
                 <td style={pageStyles.td}>{item.nome}</td>
                 <td style={pageStyles.td}>{item.nota.toFixed(2)}</td>
               </tr>

@@ -41,35 +41,24 @@ const MeusConcursos = () => {
       {concursos.length === 0 ? (
         <p>Você ainda não cadastrou gabaritos em nenhum concurso.</p>
       ) : (
-        <table style={{...globalStyles.table, marginTop: '32px'}}>
-          <thead>
-            <tr>
-              <th>Nome do Concurso</th>
-              <th>Data</th>
-              <th>Status do Gabarito</th>
-              <th>Ranking</th>
-              <th>Detalhes</th>
-            </tr>
-          </thead>
-          <tbody>
-            {concursos.map(concurso => (
-              <tr key={concurso.id}>
-                <td style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  {concurso.logo && (
-                    <img src={concurso.logo} alt="Logo" style={{ width: 48, height: 48, objectFit: 'contain', borderRadius: 8, border: '1px solid #ccc' }} />
-                  )}
-                  {concurso.nome}
-                </td>
-                <td>{concurso.data}</td>
-                <td>{concurso.gabarito}</td>
-                <td>{concurso.ranking}º</td>
-                <td>
-                  <Link to={`/gabarito/${concurso.id}`} style={globalStyles.navLink}>Ver Gabarito</Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div style={{ display: 'grid', gap: '24px', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', marginTop: '32px' }}>
+          {concursos.map(concurso => (
+            <div key={concurso.id} style={{ ...globalStyles.card, minHeight: 180, position: 'relative', padding: '32px 24px 24px 24px' }}>
+              {concurso.logo && (
+                <img src={concurso.logo} alt="Logo" style={{ maxWidth: 64, maxHeight: 64, position: 'absolute', top: 16, left: 16, borderRadius: 8, border: '1px solid #ccc' }} />
+              )}
+              <h3 style={{ marginBottom: '8px', color: PALETTE.textDark, marginLeft: concurso.logo ? 80 : 0 }}>{concurso.nome}</h3>
+              <p><strong>Data da Prova:</strong> {concurso.data}</p>
+              <p><strong>Status do Gabarito:</strong> {concurso.gabarito}</p>
+              <p><strong>Minha posição no ranking:</strong> {concurso.ranking}º</p>
+              <div style={{ display: 'flex', gap: '12px', marginTop: '18px' }}>
+                <Link to={`/gabarito/${concurso.id}`} style={{ ...globalStyles.button, background: PALETTE.primary, color: '#fff', display: 'inline-block' }}>Ver Meu Gabarito</Link>
+                <Link to={`/gabarito/${concurso.id}?definitivo=true`} style={{ ...globalStyles.button, background: PALETTE.primary, color: '#fff', display: 'inline-block' }}>Ver Gabarito Final</Link>
+                <Link to={`/ranking/${concurso.id}`} style={{ ...globalStyles.button, background: PALETTE.primary, color: '#fff', display: 'inline-block' }}>Ver Ranking</Link>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
     </main>
   );

@@ -19,7 +19,7 @@ const NovoConcurso = () => {
   const [form, setForm] = useState({
     nome: '',
     organizadora: '',
-    encerramento: '',
+    dataProva: '',
     vagas: '',
     inscritos: '',
     qtdQuestoes: '',
@@ -53,12 +53,12 @@ const NovoConcurso = () => {
 
   const handleSubmit = e => {
     e.preventDefault();
-    if (!form.nome || !form.organizadora || !form.encerramento || !form.vagas || !form.inscritos || !form.qtdQuestoes || !form.tipoGabarito) {
+    if (!form.nome || !form.organizadora || !form.dataProva || !form.vagas || !form.inscritos || !form.qtdQuestoes || !form.tipoGabarito) {
       setErro('Preencha todos os campos!');
       return;
     }
     // Formatar data para dd/mm/aaaa
-    let data = form.encerramento;
+    let data = form.dataProva;
     if (/^\d{4}-\d{2}-\d{2}$/.test(data)) {
       const [yyyy, mm, dd] = data.split('-');
       data = `${dd}/${mm}/${yyyy}`;
@@ -68,7 +68,7 @@ const NovoConcurso = () => {
         id: editId,
         nome: form.nome,
         organizadora: form.organizadora,
-        encerramento: data,
+        dataProva: data,
         vagas: form.vagas,
         inscritos: form.inscritos,
         qtdQuestoes: form.qtdQuestoes,
@@ -80,7 +80,7 @@ const NovoConcurso = () => {
       adicionarConcurso({
         nome: form.nome,
         organizadora: form.organizadora,
-        encerramento: data,
+        dataProva: data,
         vagas: form.vagas,
         inscritos: form.inscritos,
         qtdQuestoes: form.qtdQuestoes,
@@ -92,7 +92,7 @@ const NovoConcurso = () => {
     setForm({
       nome: '',
       organizadora: '',
-      encerramento: '',
+      dataProva: '',
       vagas: '',
       inscritos: '',
       qtdQuestoes: '',
@@ -123,8 +123,8 @@ const NovoConcurso = () => {
           <input type="text" name="organizadora" value={form.organizadora} onChange={handleChange} style={inputStyle} />
         </label>
         <label>
-          Data de Encerramento:
-          <input type="date" name="encerramento" value={form.encerramento} onChange={handleChange} style={inputStyle} />
+          Data da Prova:
+          <input type="date" name="dataProva" value={form.dataProva} onChange={handleChange} style={inputStyle} />
         </label>
         <label>
           Número de Vagas:
@@ -159,7 +159,7 @@ const NovoConcurso = () => {
             )}
             <h4 style={{ marginBottom: '8px', color: '#402F1D', marginLeft: c.logo ? 100 : 0 }}>{c.nome}</h4>
             <p><strong>Organizadora:</strong> {c.organizadora}</p>
-            <p><strong>Encerramento:</strong> {c.encerramento}</p>
+            <p><strong>Data da Prova:</strong> {c.dataProva}</p>
             <p><strong>Vagas:</strong> {c.vagas}</p>
             <p><strong>Inscritos:</strong> {c.inscritos}</p>
             {/* Campo Tipo de Prova removido */}
@@ -171,7 +171,7 @@ const NovoConcurso = () => {
               setForm({
                 nome: c.nome || '',
                 organizadora: c.organizadora || '',
-                encerramento: c.encerramento || '',
+                dataProva: c.dataProva || '',
                 vagas: c.vagas || '',
                 inscritos: c.inscritos || '',
                 qtdQuestoes: c.qtdQuestoes || '',

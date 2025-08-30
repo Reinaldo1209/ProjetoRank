@@ -17,9 +17,12 @@ const pageStyles = {
   loginContainer: {
     ...globalStyles.card,
     maxWidth: '450px',
+    width: '100%',
     margin: '3rem auto',
     padding: '40px',
-    textAlign: 'center'
+    textAlign: 'center',
+    boxSizing: 'border-box',
+    overflowX: 'hidden',
   },
   inputGroup: {
     position: 'relative',

@@ -12,21 +12,25 @@ import { useAuth } from '../context/AuthContext';
 
 
 const Header = () => {
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, user } = useAuth();
   return (
     <header className="header">
       <nav style={globalStyles.navbar}>
         <Link to="/" style={globalStyles.brand}>
-          RankSim
+          Rank.Ou
         </Link>
         <div style={globalStyles.navLinks}>
           <Link to="/formulario" style={globalStyles.navLink}>Inserir Gabarito</Link>
           <Link to="/ranking" style={globalStyles.navLink}>Ranking</Link>
           <Link to="/concursos" style={globalStyles.navLink}>Concursos</Link>
-          {isLoggedIn ? (
-            <Link to="/meus-concursos" style={globalStyles.navLinkCta}>Meus Concursos</Link>
-          ) : (
-            <Link to="/cadastro" style={globalStyles.navLinkCta}>Cadastrar</Link>
+          {!isLoggedIn && (
+            <>
+              <Link to="/cadastro" style={globalStyles.navLinkCta}>Cadastre-se</Link>
+              <Link to="/login" style={globalStyles.navLinkCta}>Login</Link>
+            </>
+          )}
+          {isLoggedIn && (
+            <span style={{ ...globalStyles.navLinkCta, cursor: 'default' }}>{user?.nome || 'Usuário'}</span>
           )}
         </div>
       </nav>
