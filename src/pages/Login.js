@@ -1,8 +1,8 @@
 // src/pages/Login.js
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-// Supondo que globalStyles.js está em ../styles/globalStyles.js
 import { PALETTE, globalStyles } from './globalStyles';
+import { useAuth } from '../context/AuthContext';
 
 // --- ÍCONES (SVG Paths) ---
 const ICONS = {
@@ -94,29 +94,32 @@ const InputWithIcon = ({ id, type, value, onChange, placeholder, icon, isFocused
 );
 
 
+
 function Login() {
   const navigate = useNavigate();
-  
-  // --- ESTADOS DO COMPONENTE ---
+  const { login } = useAuth();
+
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [focus, setFocus] = useState({});
+  const [error, setError] = useState(null);
 
   const handleFocus = (field) => setFocus({ [field]: true });
   const handleBlur = () => setFocus({});
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-
-    setTimeout(() => {
-      console.log("Autenticando:", { email, senha });
-      setIsLoading(false);
-      // Após sucesso, redirecionar para a home ou dashboard
-      navigate('/'); 
-    }, 1500);
+    setError(null);
+    const success = await login(email, senha);
+    setIsLoading(false);
+    if (success) {
+      navigate('/');
+    } else {
+      setError('Credenciais inválidas. Tente novamente.');
+    }
   };
 
   return (
@@ -125,46 +128,46 @@ function Login() {
         <h1 style={{...globalStyles.h1, textAlign: 'center'}}>🔐 Acessar Conta</h1>
         <p style={{marginBottom: '2rem'}}>Use suas credenciais para continuar.</p>
 
-        <form onSubmit={handleSubmit}>
-          <InputWithIcon
-              id="email"
-              type="email"
-              placeholder="seu@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              icon={ICONS.email}
-              isFocused={focus.email}
-              onFocus={() => handleFocus('email')}
-              onBlur={handleBlur}
-          />
+  <form onSubmit={handleSubmit}>
+      <InputWithIcon
+        id="email"
+        type="email"
+        placeholder="seu@email.com"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        icon={ICONS.email}
+        isFocused={focus.email}
+        onFocus={() => handleFocus('email')}
+        onBlur={handleBlur}
+      />
 
-          <div style={pageStyles.inputGroup}>
-              <div style={{...pageStyles.inputIcon, ...(focus.senha && pageStyles.inputIconFocus)}}>
-                  <svg width="20" height="20" viewBox="0 0 24 24"><path d={ICONS.lock} fill="currentColor" /></svg>
-              </div>
-              <input
-                  id="senha"
-                  name="senha"
-                  type={showPassword ? 'text' : 'password'}
-                  value={senha}
-                  onChange={(e) => setSenha(e.target.value)}
-                  placeholder="Digite sua senha"
-                  onFocus={() => handleFocus('senha')}
-                  onBlur={handleBlur}
-                  style={{...pageStyles.input, ...(focus.senha && pageStyles.inputFocus)}}
-                  required
-              />
-              <div style={pageStyles.togglePassword} onClick={() => setShowPassword(!showPassword)}>
-                  <svg width="20" height="20" viewBox="0 0 24 24">
-                      <path d={showPassword ? ICONS.eyeOff : ICONS.eye} fill="currentColor" />
-                  </svg>
-              </div>
-          </div>
+      <div style={pageStyles.inputGroup}>
+        <div style={{...pageStyles.inputIcon, ...(focus.senha && pageStyles.inputIconFocus)}}>
+          <svg width="20" height="20" viewBox="0 0 24 24"><path d={ICONS.lock} fill="currentColor" /></svg>
+        </div>
+        <input
+          id="senha"
+          name="senha"
+          type={showPassword ? 'text' : 'password'}
+          value={senha}
+          onChange={(e) => setSenha(e.target.value)}
+          placeholder="Digite sua senha"
+          onFocus={() => handleFocus('senha')}
+          onBlur={handleBlur}
+          style={{...pageStyles.input, ...(focus.senha && pageStyles.inputFocus)}}
+          required
+        />
+        <div style={pageStyles.togglePassword} onClick={() => setShowPassword(!showPassword)}>
+          <svg width="20" height="20" viewBox="0 0 24 24">
+            <path d={showPassword ? ICONS.eyeOff : ICONS.eye} fill="currentColor" />
+          </svg>
+        </div>
+      </div>
 
           <div style={pageStyles.actions}>
               <Link to="/recuperar-senha" style={pageStyles.forgotLink}>Esqueceu a senha?</Link>
           </div>
-          
+          {error && <p style={{ color: 'red', marginBottom: '1rem' }}>{error}</p>}
           <button 
             type="submit" 
             style={isLoading ? globalStyles.buttonDisabled : globalStyles.button} 

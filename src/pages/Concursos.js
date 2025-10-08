@@ -133,11 +133,15 @@ function Concursos() {
         )}
       </div>
       {/* Lista de cards filtrados */}
-      <div style={{ display: 'grid', gap: '24px', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
-        {concursosFiltrados.map((c) => (
-          <ConcursoCard key={c.id} concurso={c} />
-        ))}
-      </div>
+      {concursosFiltrados.length === 0 ? (
+        <div style={{ color: '#e74c3c', marginTop: 8 }}>Nenhum concurso encontrado.</div>
+      ) : (
+        <div style={{ display: 'grid', gap: '24px', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
+          {concursosFiltrados.map((c) => (
+            <ConcursoCard key={c.id} concurso={c} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

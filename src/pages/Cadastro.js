@@ -1,8 +1,8 @@
 // src/pages/Cadastro.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-// Supondo que globalStyles.js está em ../styles/globalStyles.js
 import { PALETTE, globalStyles } from './globalStyles';
+import { useAuth } from '../context/AuthContext';
 
 // --- ÍCONES (SVG Paths) ---
 const ICONS = {
@@ -93,21 +93,21 @@ const strengthLevels = {
     5: { width: '100%', color: '#27ae60', label: 'Muito Forte' },
 };
 
+
 function Cadastro() {
     const navigate = useNavigate();
+    const { cadastro } = useAuth();
 
-    // --- ESTADOS ---
     const [formData, setFormData] = useState({ nome: '', email: '', senha: '', confirmaSenha: '' });
     const [validation, setValidation] = useState({ senhaMatch: true });
     const [passwordStrength, setPasswordStrength] = useState(0);
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
 
-    // --- EFEITOS ---
     useEffect(() => {
         const score = getPasswordStrength(formData.senha);
         setPasswordStrength(score);
-        
         if (formData.confirmaSenha) {
             setValidation({ senhaMatch: formData.senha === formData.confirmaSenha });
         }
@@ -118,20 +118,27 @@ function Cadastro() {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
+        setError(null);
         if (!validation.senhaMatch || passwordStrength < 3) {
-            alert('Por favor, verifique se as senhas coincidem e se a senha é pelo menos "Razoável".');
+            setError('Por favor, verifique se as senhas coincidem e se a senha é pelo menos "Razoável".');
             return;
         }
         setIsLoading(true);
-        setTimeout(() => {
-            console.log("Cadastrando usuário:", formData);
-            setIsLoading(false);
-            navigate('/');
-        }, 1500);
+        const success = await cadastro({
+            nome: formData.nome,
+            email: formData.email,
+            senha: formData.senha
+        });
+        setIsLoading(false);
+        if (success) {
+            navigate('/login');
+        } else {
+            setError('Erro ao cadastrar. Tente novamente.');
+        }
     };
-    
+
     const strength = strengthLevels[passwordStrength];
 
     return (
@@ -173,6 +180,7 @@ function Cadastro() {
                     </div>
                     
                     {/* Botão de Envio e Link para Login */}
+                    {error && <p style={{ color: 'red', marginBottom: '1rem' }}>{error}</p>}
                     <button type="submit" style={isLoading ? globalStyles.buttonDisabled : globalStyles.button} disabled={isLoading}>
                         {isLoading ? 'Criando...' : 'Criar Conta'}
                     </button>

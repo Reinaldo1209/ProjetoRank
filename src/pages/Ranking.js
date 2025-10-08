@@ -1,6 +1,6 @@
 // ...imports...
 // src/pages/Ranking.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePayment } from '../context/PaymentContext';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Link } from 'react-router-dom';
@@ -8,29 +8,10 @@ import { useConcursos } from '../context/ConcursosContext';
 // Supondo que globalStyles.js está em ../styles/globalStyles.js
 import { PALETTE, globalStyles } from './globalStyles'; 
 
-// --- DADOS MOCK (MAIS COMPLETOS) ---
-const mockRanking = [
-  { nome: 'João V. Silva', nota: 91.0, posicao: 1, avatar: '/avatars/avatar1.png' },
-  { nome: 'Ana C. Souza', nota: 88.5, posicao: 2, avatar: '/avatars/avatar2.png' },
-  { nome: 'Carlos F. Lima', nota: 87.0, posicao: 3, avatar: '/avatars/avatar3.png' },
-  { nome: 'Mariana B. Costa', nota: 85.0, posicao: 4, avatar: '/avatars/avatar4.png' },
-  { nome: 'Você', nota: 83.5, posicao: 5, avatar: '/avatars/avatar5.png' },
-  { nome: 'Lucas R. Almeida', nota: 82.0, posicao: 6, avatar: '/avatars/avatar6.png' },
-  { nome: 'Beatriz S. Oliveira', nota: 81.5, posicao: 7, avatar: '/avatars/avatar7.png' },
-  { nome: 'Rafael P. Martins', nota: 79.0, posicao: 8, avatar: '/avatars/avatar8.png' },
-  { nome: 'Fernanda G. Rocha', nota: 78.5, posicao: 9, avatar: '/avatars/avatar1.png' },
-  { nome: 'Thiago L. Pereira', nota: 77.0, posicao: 10, avatar: '/avatars/avatar2.png' },
-];
+import { getApiUrl } from '../api';
 
 // --- LÓGICA DE CÁLCULO ---
-const numeroDeVagas = 4; // Exemplo: número de vagas para o cargo
-const numeroDeInscritos = mockRanking.length;
-const usuario = mockRanking.find(c => c.nome === 'Você');
-const suaPosicao = usuario ? usuario.posicao : 'N/A';
-// Nota de corte estimada: nota do último candidato dentro do número de vagas.
-const notaDeCorte = mockRanking.length >= numeroDeVagas 
-  ? mockRanking[numeroDeVagas - 1].nota.toFixed(2) 
-  : 'N/A';
+// Removido mock, cálculo será feito com dados reais
 
 // --- ESTILOS DA PÁGINA ---
 const pageStyles = {
@@ -118,30 +99,41 @@ function Ranking() {
   const { id } = useParams();
   const { concursos } = useConcursos();
   const concurso = id ? concursos.find(c => String(c.id) === String(id)) : null;
-  const [ranking] = useState(mockRanking);
+  const [ranking, setRanking] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('Ampla Concorrência');
-  // Variável booleana para simular admin (troque para true para testar)
   const isAdmin = false;
 
-  React.useEffect(() => {
-    // Admin pode acessar qualquer ranking
+  useEffect(() => {
+    async function fetchRanking() {
+      if (!id) return;
+      setLoading(true);
+      const res = await fetch(getApiUrl(`/concurso/${id}/ranking`));
+      if (res.ok) {
+        const data = await res.json();
+        setRanking(data);
+      }
+      setLoading(false);
+    }
+    fetchRanking();
+  }, [id]);
+
+  useEffect(() => {
     if (isAdmin) return;
-    // Usuário comum só acessa ranking se pagou por este concurso
     if (concurso && !paidConcursoIds.includes(concurso.id)) {
       navigate('/checkout');
     }
   }, [concurso, paidConcursoIds, navigate, isAdmin]);
 
-  // Cálculo dinâmico usando dados do concurso
-  const numeroDeVagas = concurso?.vagas || 0;
+  const numeroDeVagas = concurso?.numeroVagas || concurso?.vagas || 0;
   const numeroDeQuestoes = concurso?.qtdQuestoes || 0;
   const numeroDeInscritos = ranking.length;
   // Autenticação real
-  const { isLoggedIn } = require('../context/AuthContext').useAuth();
+  const { user } = require('../context/AuthContext').useAuth();
   // Simulação de inscrição (ajuste conforme lógica real)
   const usuarioInscrito = false; // Exemplo: false = não inscrito
-  const usuario = ranking.find(c => c.nome === 'Você');
-  const suaPosicao = isLoggedIn && usuarioInscrito && usuario ? usuario.posicao : null;
+  const usuario = ranking.find(c => c.nome === (user?.nome || 'Você'));
+  const suaPosicao = user && usuarioInscrito && usuario ? usuario.posicao : null;
   const notaDeCorte = ranking.length >= numeroDeVagas && numeroDeVagas > 0
     ? ranking[numeroDeVagas - 1].nota.toFixed(2)
     : 'N/A';
@@ -256,40 +248,41 @@ function Ranking() {
         </a>
       </div>
 
-      <table style={pageStyles.table}>
-        <thead>
-          <tr>
-            <th style={pageStyles.th}>Posição</th>
-            <th style={pageStyles.th}>Nome</th>
-            <th style={pageStyles.th}>Nota Final</th>
-          </tr>
-        </thead>
-        <tbody>
-          {ranking.map((item, index) => {
-            const isUser = item.nome === 'Você';
-            const isEven = index % 2 === 1; // Para zebrar a partir da segunda linha de dados
-            
-            // Combina os estilos: zebrado e destaque do usuário
-            const rowStyle = {
-              ...(isEven && !isUser && pageStyles.evenRow),
-              ...(isUser && pageStyles.userHighlight),
-            };
-
-            return (
-              <tr key={index} style={rowStyle}>
-                <td style={pageStyles.td}>
-                  {item.posicao}º
-                  {item.avatar && (
-                    <img src={item.avatar} alt="Avatar" style={{ width: 32, height: 32, borderRadius: '50%', marginLeft: 100, verticalAlign: 'middle', border: isUser ? '2px solid #2d9cdb' : '1px solid #ccc' }} />
-                  )}
-                </td>
-                <td style={pageStyles.td}>{item.nome}</td>
-                <td style={pageStyles.td}>{item.nota.toFixed(2)}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      {loading ? (
+        <p>Carregando ranking...</p>
+      ) : (
+        <table style={pageStyles.table}>
+          <thead>
+            <tr>
+              <th style={pageStyles.th}>Posição</th>
+              <th style={pageStyles.th}>Nome</th>
+              <th style={pageStyles.th}>Nota Final</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ranking.map((item, index) => {
+              const isUser = user && item.nome === user.nome;
+              const isEven = index % 2 === 1;
+              const rowStyle = {
+                ...(isEven && !isUser && pageStyles.evenRow),
+                ...(isUser && pageStyles.userHighlight),
+              };
+              return (
+                <tr key={index} style={rowStyle}>
+                  <td style={pageStyles.td}>
+                    {item.posicao}º
+                    {item.avatar && (
+                      <img src={item.avatar} alt="Avatar" style={{ width: 32, height: 32, borderRadius: '50%', marginLeft: 100, verticalAlign: 'middle', border: isUser ? '2px solid #2d9cdb' : '1px solid #ccc' }} />
+                    )}
+                  </td>
+                  <td style={pageStyles.td}>{item.nome}</td>
+                  <td style={pageStyles.td}>{item.nota.toFixed(2)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
 
       <div style={{ marginTop: '2rem', textAlign: 'center' }}>
         <Link to={isLoggedIn ? "/formulario" : "/login"} style={globalStyles.button}>
