@@ -1,7 +1,7 @@
 // src/pages/Login.js
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { PALETTE, globalStyles } from './globalStyles';
+// styles moved to src/pages/global.css (CSS variables + utility classes)
 import { useAuth } from '../context/AuthContext';
 
 // --- ÍCONES (SVG Paths) ---
@@ -15,10 +15,8 @@ const ICONS = {
 // --- ESTILOS DA PÁGINA ---
 const pageStyles = {
   loginContainer: {
-    ...globalStyles.card,
     maxWidth: '450px',
     width: '100%',
-    margin: '3rem auto',
     padding: '40px',
     textAlign: 'center',
     boxSizing: 'border-box',
@@ -29,22 +27,21 @@ const pageStyles = {
     marginBottom: '1.5rem',
   },
   input: {
-    ...globalStyles.inputBase, // Reutiliza estilo do globalStyles
     paddingLeft: '40px', // Espaço para o ícone
   },
   inputFocus: {
-    ...globalStyles.inputFocus // Reutiliza estilo do globalStyles
+    // focus handled by CSS .input-base:focus
   },
   inputIcon: {
     position: 'absolute',
     left: '12px',
     top: '50%',
     transform: 'translateY(-50%)',
-    color: PALETTE.textMedium,
+    color: 'var(--text-medium)',
     transition: 'color 0.3s ease',
   },
   inputIconFocus: {
-    color: PALETTE.primary,
+    color: 'var(--primary)',
   },
   togglePassword: {
     position: 'absolute',
@@ -52,7 +49,7 @@ const pageStyles = {
     top: '50%',
     transform: 'translateY(-50%)',
     cursor: 'pointer',
-    color: PALETTE.textMedium,
+    color: 'var(--text-medium)',
   },
   actions: {
     display: 'flex',
@@ -62,35 +59,36 @@ const pageStyles = {
   },
   forgotLink: {
     fontSize: '0.9rem',
-    color: PALETTE.primary,
+    color: 'var(--primary)',
     textDecoration: 'none',
     fontWeight: '600',
   },
   registerPrompt: {
     marginTop: '2rem',
-    color: PALETTE.textMedium,
+    color: 'var(--text-medium)',
   }
 };
 
 // --- COMPONENTE REUTILIZÁVEL DE INPUT ---
 const InputWithIcon = ({ id, type, value, onChange, placeholder, icon, isFocused, onFocus, onBlur }) => (
-    <div style={pageStyles.inputGroup}>
-        <div style={{...pageStyles.inputIcon, ...(isFocused && pageStyles.inputIconFocus)}}>
-            <svg width="20" height="20" viewBox="0 0 24 24"><path d={icon} fill="currentColor" /></svg>
-        </div>
-        <input
-            id={id}
-            name={id}
-            type={type}
-            value={value}
-            onChange={onChange}
-            placeholder={placeholder}
-            onFocus={onFocus}
-            onBlur={onBlur}
-            style={{...pageStyles.input, ...(isFocused && pageStyles.inputFocus)}}
-            required
-        />
+  <div style={pageStyles.inputGroup}>
+    <div style={{ ...pageStyles.inputIcon, ...(isFocused && pageStyles.inputIconFocus) }}>
+      <svg width="20" height="20" viewBox="0 0 24 24"><path d={icon} fill="currentColor" /></svg>
     </div>
+    <input
+      id={id}
+      name={id}
+      type={type}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      onFocus={onFocus}
+      onBlur={onBlur}
+      className="form-control input-base"
+      style={{ ...pageStyles.input, ...(isFocused && pageStyles.inputFocus), marginBottom: '0.75rem' }}
+      required
+    />
+  </div>
 );
 
 
@@ -123,63 +121,66 @@ function Login() {
   };
 
   return (
-    <div style={globalStyles.pageContent}>
-      <div style={pageStyles.loginContainer}>
-        <h1 style={{...globalStyles.h1, textAlign: 'center'}}>🔐 Acessar Conta</h1>
-        <p style={{marginBottom: '2rem'}}>Use suas credenciais para continuar.</p>
+    <div className="container py-4">
+      <div className="page-content">
+        <div className="global-card" style={pageStyles.loginContainer}>
+          <h1 className="global-h1" style={{ textAlign: 'center' }}>🔐 Acessar Conta</h1>
+          <p style={{ marginBottom: '2rem' }}>Use suas credenciais para continuar.</p>
 
-  <form onSubmit={handleSubmit}>
-      <InputWithIcon
-        id="email"
-        type="email"
-        placeholder="seu@email.com"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        icon={ICONS.email}
-        isFocused={focus.email}
-        onFocus={() => handleFocus('email')}
-        onBlur={handleBlur}
-      />
+          <form onSubmit={handleSubmit}>
+            <InputWithIcon
+              id="email"
+              type="email"
+              placeholder="seu@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              icon={ICONS.email}
+              isFocused={focus.email}
+              onFocus={() => handleFocus('email')}
+              onBlur={handleBlur}
+            />
 
-      <div style={pageStyles.inputGroup}>
-        <div style={{...pageStyles.inputIcon, ...(focus.senha && pageStyles.inputIconFocus)}}>
-          <svg width="20" height="20" viewBox="0 0 24 24"><path d={ICONS.lock} fill="currentColor" /></svg>
-        </div>
-        <input
-          id="senha"
-          name="senha"
-          type={showPassword ? 'text' : 'password'}
-          value={senha}
-          onChange={(e) => setSenha(e.target.value)}
-          placeholder="Digite sua senha"
-          onFocus={() => handleFocus('senha')}
-          onBlur={handleBlur}
-          style={{...pageStyles.input, ...(focus.senha && pageStyles.inputFocus)}}
-          required
-        />
-        <div style={pageStyles.togglePassword} onClick={() => setShowPassword(!showPassword)}>
-          <svg width="20" height="20" viewBox="0 0 24 24">
-            <path d={showPassword ? ICONS.eyeOff : ICONS.eye} fill="currentColor" />
-          </svg>
-        </div>
-      </div>
+            <div style={pageStyles.inputGroup}>
+              <div style={{ ...pageStyles.inputIcon, ...(focus.senha && pageStyles.inputIconFocus) }}>
+                <svg width="20" height="20" viewBox="0 0 24 24"><path d={ICONS.lock} fill="currentColor" /></svg>
+              </div>
+              <input
+                id="senha"
+                name="senha"
+                type={showPassword ? 'text' : 'password'}
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+                placeholder="Digite sua senha"
+                onFocus={() => handleFocus('senha')}
+                onBlur={handleBlur}
+                className="form-control"
+                style={{ ...pageStyles.input, ...(focus.senha && pageStyles.inputFocus) }}
+                required
+              />
+              <div style={pageStyles.togglePassword} onClick={() => setShowPassword(!showPassword)}>
+                <svg width="20" height="20" viewBox="0 0 24 24">
+                  <path d={showPassword ? ICONS.eyeOff : ICONS.eye} fill="currentColor" />
+                </svg>
+              </div>
+            </div>
 
-          <div style={pageStyles.actions}>
+            <div style={pageStyles.actions}>
               <Link to="/recuperar-senha" style={pageStyles.forgotLink}>Esqueceu a senha?</Link>
-          </div>
-          {error && <p style={{ color: 'red', marginBottom: '1rem' }}>{error}</p>}
-          <button 
-            type="submit" 
-            style={isLoading ? globalStyles.buttonDisabled : globalStyles.button} 
-            disabled={isLoading}
-          >
-            {isLoading ? 'Entrando...' : 'Entrar'}
-          </button>
-        </form>
+            </div>
+            {error && <p style={{ color: 'red', marginBottom: '1rem' }}>{error}</p>}
+            <button
+              type="submit"
+              className={isLoading ? 'global-button-disabled btn' : 'global-button btn'}
+              disabled={isLoading}
+            >
+              {isLoading ? 'Entrando...' : 'Entrar'}
+            </button>
+          </form>
 
-        <p style={pageStyles.registerPrompt}>
-          Não tem uma conta? <Link to="/cadastro" style={pageStyles.forgotLink}>Cadastre-se</Link>
-        </p>
+          <p style={pageStyles.registerPrompt}>
+            Não tem uma conta? <Link to="/cadastro" style={pageStyles.forgotLink}>Cadastre-se</Link>
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -13,7 +13,7 @@ import MeusConcursos from './pages/MeusConcursos';
 import NovoConcurso from './pages/NovoConcurso';
 import Checkout from './pages/Checkout';
 import SolicitarRanking from './pages/SolicitarRanking';
-import { globalStyles } from './pages/globalStyles';
+// globalStyles removed: using CSS variables/classes in src/pages/global.css
 import Header from './components/Header';
 import { ConcursosProvider } from './context/ConcursosContext';
 import { AuthProvider } from './context/AuthContext';
@@ -22,11 +22,11 @@ import { PaymentProvider } from './context/PaymentContext';
 function App() {
 
   const Footer = () => (
-  <footer style={globalStyles.footer}>
-    <p>© {new Date().getFullYear()} RankSim. Todos os direitos reservados.</p>
-    <p>Simule seu sucesso.</p>
-  </footer>
-);
+    <footer className="global-footer">
+      <p>© {new Date().getFullYear()} RankSim. Todos os direitos reservados.</p>
+      <p>Simule seu sucesso.</p>
+    </footer>
+  );
 
   return (
     <ConcursosProvider>

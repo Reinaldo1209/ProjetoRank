@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { getApiUrl } from '../api';
-import { globalStyles } from './globalStyles';
+import { getApiUrl, authFetch } from '../api';
+// styles moved to src/pages/global.css (CSS variables + utility classes)
 
 function CadastroOpcao() {
   const [form, setForm] = useState({ texto: '', perguntaId: '' });
@@ -17,7 +17,7 @@ function CadastroOpcao() {
     setLoading(true);
     setError(null);
     setSuccess(false);
-    const res = await fetch(getApiUrl('/opcao'), {
+    const res = await authFetch('/opcao', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -35,15 +35,17 @@ function CadastroOpcao() {
   };
 
   return (
-    <div style={globalStyles.pageContent}>
-      <h2>Cadastro de Opção</h2>
-      <form onSubmit={handleSubmit} style={{ maxWidth: 400 }}>
-        <input name="texto" value={form.texto} onChange={handleChange} placeholder="Texto da opção" required style={globalStyles.inputBase} />
-        <input name="perguntaId" value={form.perguntaId} onChange={handleChange} placeholder="ID da Pergunta" required type="number" style={globalStyles.inputBase} />
-        <button type="submit" style={globalStyles.button} disabled={loading}>{loading ? 'Enviando...' : 'Cadastrar'}</button>
-        {success && <p style={{ color: 'green' }}>Opção cadastrada com sucesso!</p>}
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-      </form>
+    <div className="container py-4">
+      <div className="page-content">
+        <h2>Cadastro de Opção</h2>
+        <form onSubmit={handleSubmit} style={{ maxWidth: 400 }}>
+          <input className="form-control mb-3 input-base" name="texto" value={form.texto} onChange={handleChange} placeholder="Texto da opção" required />
+          <input className="form-control mb-3 input-base" name="perguntaId" value={form.perguntaId} onChange={handleChange} placeholder="ID da Pergunta" required type="number" />
+          <button type="submit" className="global-button" disabled={loading}>{loading ? 'Enviando...' : 'Cadastrar'}</button>
+          {success && <p style={{ color: 'green' }}>Opção cadastrada com sucesso!</p>}
+          {error && <p style={{ color: 'red' }}>{error}</p>}
+        </form>
+      </div>
     </div>
   );
 }

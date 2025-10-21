@@ -1,7 +1,7 @@
 // src/pages/GabaritoDetalhe.js
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import { PALETTE, globalStyles } from './globalStyles';
+// styles moved to src/pages/global.css (CSS variables + utility classes)
 import { useConcursos } from '../context/ConcursosContext';
 
 // Simulação de dados para um gabarito específico
@@ -30,12 +30,12 @@ function GabaritoDetalhe() {
   const { concursos } = useConcursos();
   const concursoInfo = concursos.find(c => c.nome === gabarito.concurso);
   return (
-    <div style={globalStyles.pageContent}>
-      <h1 style={globalStyles.h1}>📄 Detalhes do Gabarito</h1>
-      <p style={globalStyles.subtitle}>Veja abaixo as informações completas do seu envio.</p>
+    <div className="page-content">
+      <h1 className="global-h1">📄 Detalhes do Gabarito</h1>
+      <p className="subtitle">Veja abaixo as informações completas do seu envio.</p>
 
-      <div style={globalStyles.card}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
+      <div className="global-card">
+        <div className="d-flex align-items-center" style={{ gap: 16, marginBottom: 16 }}>
           {concursoInfo?.logo && (
             <img src={concursoInfo.logo} alt="Logo" style={{ width: 56, height: 56, objectFit: 'contain', borderRadius: 8, border: '1px solid #ccc' }} />
           )}
@@ -46,11 +46,11 @@ function GabaritoDetalhe() {
         <p><strong>Data de Envio:</strong> {gabarito.dataEnvio}</p>
         <div style={{ marginTop: 24 }}>
           <label style={{ fontWeight: 600, marginBottom: 8, display: 'block' }}>Gabarito enviado:</label>
-          <div style={{ display: 'flex', gap: '32px', flexWrap: 'wrap' }}>
+          <div className="d-flex flex-wrap" style={{ gap: '24px' }}>
             {Array.from(gabarito.gabarito).map((alt, idx) => (
               <div key={idx} style={{ marginBottom: 12, minWidth: 80 }}>
                 <span style={{ fontWeight: 600, marginRight: 8 }}>Q{idx + 1}</span>
-                <span style={{ fontWeight: 600, color: PALETTE.primary }}>{alt}</span>
+                <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{alt}</span>
               </div>
             ))}
           </div>

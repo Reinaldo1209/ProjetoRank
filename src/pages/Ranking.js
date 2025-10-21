@@ -5,17 +5,18 @@ import { usePayment } from '../context/PaymentContext';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { useConcursos } from '../context/ConcursosContext';
+import { useAuth } from '../context/AuthContext';
 // Supondo que globalStyles.js está em ../styles/globalStyles.js
-import { PALETTE, globalStyles } from './globalStyles'; 
+// styles moved to src/pages/global.css (CSS variables + utility classes)
 
-import { getApiUrl } from '../api';
+import { getApiUrl, authFetch } from '../api';
 
 // --- LÓGICA DE CÁLCULO ---
 // Removido mock, cálculo será feito com dados reais
 
 // --- ESTILOS DA PÁGINA ---
 const pageStyles = {
-  // Estilos para os cartões de estatísticas
+  // Estilos para os cartões de estatísticas (usamos CSS vars)
   statsContainer: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
@@ -23,20 +24,23 @@ const pageStyles = {
     marginBottom: '2rem',
   },
   statCard: {
-    ...globalStyles.card, // Reutiliza o estilo base de card
     padding: '20px',
     textAlign: 'center',
+    backgroundColor: 'var(--white)',
+    borderRadius: 12,
+    boxShadow: '0 4px 25px var(--shadow)',
+    border: '1px solid var(--border)'
   },
   statLabel: {
     fontSize: '0.9rem',
-    color: PALETTE.textMedium,
+    color: 'var(--text-medium)',
     marginBottom: '8px',
     textTransform: 'uppercase',
   },
   statValue: {
     fontSize: '2rem',
     fontWeight: '700',
-    color: PALETTE.primary,
+    color: 'var(--primary)',
   },
   // Estilos para a navegação secundária (filtros)
   subNav: {
@@ -44,33 +48,33 @@ const pageStyles = {
     gap: '1rem',
     marginBottom: '2rem',
     paddingBottom: '1rem',
-    borderBottom: `2px solid ${PALETTE.border}`,
+    borderBottom: `2px solid var(--border)`,
   },
   subNavLink: {
     padding: '8px 16px',
     textDecoration: 'none',
-    color: PALETTE.textMedium,
+    color: 'var(--text-medium)',
     fontWeight: '600',
     borderRadius: '8px',
     transition: 'all 0.3s ease',
   },
   subNavLinkActive: {
-    backgroundColor: PALETTE.primary,
-    color: PALETTE.white,
+    backgroundColor: 'var(--primary)',
+    color: 'var(--white)',
   },
   // Estilos da Tabela (refinados)
   table: {
     width: '100%',
     borderCollapse: 'collapse',
     marginTop: '2rem',
-    backgroundColor: PALETTE.white,
+    backgroundColor: 'var(--white)',
     borderRadius: '8px',
     overflow: 'hidden',
-    boxShadow: `0 4px 25px ${PALETTE.shadow}`,
+    boxShadow: '0 4px 25px var(--shadow)',
   },
   th: {
-    backgroundColor: PALETTE.primary,
-    color: PALETTE.white,
+    backgroundColor: 'var(--primary)',
+    color: 'var(--white)',
     padding: '16px',
     textAlign: 'left',
     textTransform: 'uppercase',
@@ -79,8 +83,8 @@ const pageStyles = {
   },
   td: {
     padding: '16px',
-    borderBottom: `1px solid ${PALETTE.border}`,
-    color: PALETTE.textDark,
+    borderBottom: `1px solid var(--border)`,
+    color: 'var(--text-dark)',
   },
   // Linha do usuário destacada com cor do tema
   userHighlight: {
@@ -89,7 +93,7 @@ const pageStyles = {
   },
   // Linhas zebradas para melhor leitura
   evenRow: {
-    backgroundColor: PALETTE.backgroundLight,
+    backgroundColor: 'var(--background-light)',
   }
 };
 
@@ -108,7 +112,7 @@ function Ranking() {
     async function fetchRanking() {
       if (!id) return;
       setLoading(true);
-      const res = await fetch(getApiUrl(`/concurso/${id}/ranking`));
+      const res = await authFetch(`/concurso/${id}/ranking`);
       if (res.ok) {
         const data = await res.json();
         setRanking(data);
@@ -129,7 +133,7 @@ function Ranking() {
   const numeroDeQuestoes = concurso?.qtdQuestoes || 0;
   const numeroDeInscritos = ranking.length;
   // Autenticação real
-  const { user } = require('../context/AuthContext').useAuth();
+  const { user, isLoggedIn } = useAuth();
   // Simulação de inscrição (ajuste conforme lógica real)
   const usuarioInscrito = false; // Exemplo: false = não inscrito
   const usuario = ranking.find(c => c.nome === (user?.nome || 'Você'));
@@ -139,15 +143,15 @@ function Ranking() {
     : 'N/A';
 
   return (
-    <div style={globalStyles.pageContent}>
-      <h1 style={globalStyles.h1}>📊 Ranking do Concurso</h1>
+    <div className="page-content">
+      <h1 className="global-h1">📊 Ranking do Concurso</h1>
       {concurso && (
-        <div style={{ marginBottom: '2rem', padding: '16px', background: '#f9f6f2', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
+        <div className="global-card" style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
           {concurso.logo && (
             <img src={concurso.logo} alt="Logo" style={{ maxWidth: 80, maxHeight: 80, borderRadius: 8, border: '1px solid #ccc', flexShrink: 0 }} />
           )}
           <div style={{ minWidth: 220 }}>
-            <h2 style={{ color: PALETTE.primary, marginBottom: 8 }}>{concurso.nome}</h2>
+            <h2 className="text-primary" style={{ marginBottom: 8 }}>{concurso.nome}</h2>
             <p><strong>Organizadora:</strong> {concurso.organizadora}</p>
             <p><strong>Data da Prova:</strong> {concurso.dataProva}</p>
             <p><strong>Vagas:</strong> {numeroDeVagas}</p>
@@ -155,26 +159,14 @@ function Ranking() {
           </div>
         </div>
       )}
-      <p>Veja sua colocação e compare seu desempenho com outros candidatos.</p>
-      <div style={{ display: 'flex', gap: 32, margin: '24px 0', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center' }}>
+  <p>Veja sua colocação e compare seu desempenho com outros candidatos.</p>
+  <div className="d-flex flex-wrap justify-content-center" style={{ gap: 32, margin: '24px 0' }}>
         {concursos.map((c) => (
-          <div key={c.id} style={{ textAlign: 'center', width: 100, minWidth: 100, marginBottom: 12 }}>
+          <div key={c.id} className="text-center" style={{ width: 100, minWidth: 100, marginBottom: 12 }}>
             <button
               onClick={() => navigate(`/ranking/${c.id}`)}
-              style={{
-                border: String(c.id) === String(concurso?.id) ? '2px solid #2d9cdb' : '1px solid #ccc',
-                background: String(c.id) === String(concurso?.id) ? '#eaf6fb' : '#fff',
-                borderRadius: 8,
-                padding: 8,
-                cursor: 'pointer',
-                boxShadow: '0 2px 8px #eee',
-                marginBottom: 8,
-                width: 80,
-                height: 80,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
+              className={`btn ${String(c.id) === String(concurso?.id) ? 'btn-outline-primary' : 'btn-light'}`} 
+              style={{ borderRadius: 8, padding: 8, width: 80, height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               disabled={String(c.id) === String(concurso?.id)}
               title={c.nome}
             >
@@ -184,35 +176,41 @@ function Ranking() {
                 <span style={{ fontSize: 12, color: '#aaa' }}>Sem logo</span>
               )}
             </button>
-            <div style={{ fontSize: 12, color: String(c.id) === String(concurso?.id) ? PALETTE.primary : PALETTE.textMedium, fontWeight: String(c.id) === String(concurso?.id) ? 'bold' : 'normal', wordBreak: 'break-word', whiteSpace: 'pre-line', maxWidth: 90, lineHeight: 1.2 }}>{c.nome}</div>
+            <div style={{ fontSize: 12, color: String(c.id) === String(concurso?.id) ? 'var(--primary)' : 'var(--text-medium)', fontWeight: String(c.id) === String(concurso?.id) ? 'bold' : 'normal', wordBreak: 'break-word', whiteSpace: 'pre-line', maxWidth: 90, lineHeight: 1.2 }}>{c.nome}</div>
             {/* Se não tem acesso ao ranking desse concurso */}
-            {String(c.id) !== String(concurso?.id) && !isAdmin && !paidConcursoIds.includes(c.id) && (
+              {String(c.id) !== String(concurso?.id) && !isAdmin && !paidConcursoIds.includes(c.id) && (
               <div style={{ marginTop: 8, color: '#e74c3c', fontSize: 13 }}>
                 Você não está participando deste ranking.<br />
-                <Link to="/formulario" style={{ ...globalStyles.button, fontSize: '0.9rem', marginTop: 6 }}>Participar</Link>
+                <Link to="/formulario" className="global-button" style={{ fontSize: '0.9rem', marginTop: 6 }}>Participar</Link>
               </div>
             )}
           </div>
         ))}
       </div>
-      <div style={pageStyles.statsContainer}>
-        <div style={pageStyles.statCard}>
-          <div style={pageStyles.statLabel}>Sua Posição</div>
-          {isLoggedIn && usuarioInscrito && suaPosicao ? (
-            <div style={pageStyles.statValue}>{suaPosicao}º</div>
-          ) : (
-            <Link to={isLoggedIn ? "/formulario" : "/login"} style={{ ...globalStyles.button, fontSize: '1rem', padding: '10px 24px', textDecoration: 'none' }}>
-              Cadastre seu Gabarito
-            </Link>
-          )}
+      <div className="row gx-4 gy-3" style={{ marginTop: '1rem' }}>
+        <div className="col-12 col-md-4">
+          <div className="global-card text-center">
+            <div className="subtitle">Sua Posição</div>
+            {isLoggedIn && usuarioInscrito && suaPosicao ? (
+              <div className="h2">{suaPosicao}º</div>
+            ) : (
+              <Link to={isLoggedIn ? "/formulario" : "/login"} className="global-button" style={{ fontSize: '1rem', padding: '10px 24px', textDecoration: 'none' }}>
+                Cadastre seu Gabarito
+              </Link>
+            )}
+          </div>
         </div>
-        <div style={pageStyles.statCard}>
-          <div style={pageStyles.statLabel}>MotoSerra (Est.)</div>
-          <div style={pageStyles.statValue}>{notaDeCorte}</div>
+        <div className="col-12 col-md-4">
+          <div className="global-card text-center">
+            <div className="subtitle">Nota de Corte</div>
+            <div className="h2">{notaDeCorte}</div>
+          </div>
         </div>
-        <div style={pageStyles.statCard}>
-          <div style={pageStyles.statLabel}>Combatentes</div>
-          <div style={pageStyles.statValue}>{numeroDeInscritos}</div>
+        <div className="col-12 col-md-4">
+          <div className="global-card text-center">
+            <div className="subtitle">Inscritos</div>
+            <div className="h2">{numeroDeInscritos}</div>
+          </div>
         </div>
       </div>
 
@@ -285,7 +283,7 @@ function Ranking() {
       )}
 
       <div style={{ marginTop: '2rem', textAlign: 'center' }}>
-        <Link to={isLoggedIn ? "/formulario" : "/login"} style={globalStyles.button}>
+        <Link to={isLoggedIn ? "/formulario" : "/login"} className="global-button">
           Cadastre seu Gabarito
         </Link>
       </div>

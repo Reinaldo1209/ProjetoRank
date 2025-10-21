@@ -4,15 +4,14 @@ import { usePayment } from '../context/PaymentContext';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 // Supondo que globalStyles.js está em ../styles/globalStyles.js
-import { PALETTE, globalStyles } from './globalStyles';
+// styles moved to src/pages/global.css (CSS variables + utility classes)
 import { useConcursos } from '../context/ConcursosContext';
 
 // --- ESTILOS ESPECÍFICOS DA PÁGINA ---
 const pageStyles = {
   formContainer: {
-    ...globalStyles.card, // Reutiliza o estilo base de card
     maxWidth: '700px',
-    margin: '2rem auto', // Centraliza o card do formulário
+    margin: '2rem auto',
     padding: '40px',
   },
   formGroup: {
@@ -22,33 +21,29 @@ const pageStyles = {
     fontWeight: '600',
     marginBottom: '8px',
     display: 'block',
-    color: PALETTE.textDark,
+    color: 'var(--text-dark)',
   },
-  // Estilo base para todos os campos de entrada
   inputBase: {
     width: '100%',
     padding: '12px',
     borderRadius: '8px',
-    border: `2px solid ${PALETTE.border}`,
-    backgroundColor: PALETTE.backgroundLight,
+    border: `2px solid var(--border)`,
+    backgroundColor: 'var(--background-light)',
     fontSize: '1rem',
     transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
-    outline: 'none', // Remove o outline padrão do navegador
+    outline: 'none',
   },
-  // Estilo para quando o campo está em foco
   inputFocus: {
-    borderColor: PALETTE.primary,
+    borderColor: 'var(--primary)',
     boxShadow: `0 0 0 3px rgba(124, 92, 59, 0.15)`,
   },
   helperText: {
     fontSize: '0.85rem',
-    color: PALETTE.textMedium,
+    color: 'var(--text-medium)',
     marginTop: '6px',
   },
-  // Estilo para o botão desabilitado
   buttonDisabled: {
-    ...globalStyles.button,
-    backgroundColor: PALETTE.textMedium,
+    backgroundColor: 'var(--text-medium)',
     cursor: 'not-allowed',
     boxShadow: 'none',
   }
@@ -203,14 +198,14 @@ function Formulario() {
   };
 
   return (
-    <div style={globalStyles.pageContent}>
+    <div className="page-content">
       <div style={{
         ...pageStyles.formContainer,
         border: isDefinitivo ? '3px solid #2d9cdb' : undefined,
         background: isDefinitivo ? '#eaf6fb' : undefined,
       }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <h1 style={globalStyles.h1}>{isDefinitivo ? '📝 Gabarito Definitivo' : '📝 Enviar Gabarito'}</h1>
+          <h1 className="global-h1">{isDefinitivo ? '📝 Gabarito Definitivo' : '📝 Enviar Gabarito'}</h1>
           {isDefinitivo ? (
             <p style={{ color: '#2d9cdb', fontWeight: 'bold' }}>Este gabarito será usado como base para o cálculo da nota de corte do concurso.</p>
           ) : (
@@ -267,7 +262,8 @@ function Formulario() {
               onFocus={() => handleFocus('nome')}
               onBlur={() => handleBlur('nome')}
               placeholder="Como você quer aparecer no ranking?"
-              style={{ ...pageStyles.inputBase, ...(focus.nome && pageStyles.inputFocus) }}
+              className="input-base"
+              style={{ ...(focus.nome && pageStyles.inputFocus) }}
               required
             />
           </div>
@@ -287,7 +283,7 @@ function Formulario() {
               onFocus={() => setShowSuggestions(true)}
               onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
               onKeyDown={handleInputKeyDown}
-              style={pageStyles.inputBase}
+              className="input-base"
               autoComplete="off"
               ref={inputRef}
             />
@@ -318,7 +314,7 @@ function Formulario() {
                     style={{
                       padding: '10px 16px',
                       background: highlightedIdx === idx ? '#eaf6fb' : '#fff',
-                      color: highlightedIdx === idx ? PALETTE.primary : PALETTE.textDark,
+                      color: highlightedIdx === idx ? 'var(--primary)' : 'var(--text-dark)',
                       cursor: 'pointer',
                       fontWeight: highlightedIdx === idx ? 'bold' : 'normal',
                     }}
@@ -340,7 +336,7 @@ function Formulario() {
               name="tipoConcorrencia"
               value={formData.tipoConcorrencia || ''}
               onChange={handleChange}
-              style={pageStyles.inputBase}
+              className="input-base"
               required
             >
               <option value="">Selecione...</option>
@@ -382,7 +378,7 @@ function Formulario() {
 
           <button 
             type="submit" 
-            style={isLoading ? pageStyles.buttonDisabled : globalStyles.button}
+            className={isLoading ? 'global-button-disabled' : 'global-button'}
             disabled={isLoading}
           >
             {isLoading ? 'Enviando...' : (isDefinitivo ? 'Cadastrar Gabarito Definitivo' : 'Enviar e Ver Minha Posição')}

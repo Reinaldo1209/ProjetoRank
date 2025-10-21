@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
-import { PALETTE, globalStyles } from './globalStyles';
+// styles moved to src/pages/global.css (CSS variables + utility classes)
+// styles moved to src/pages/global.css (CSS variables + utility classes)
 import { useNavigate } from 'react-router-dom';
 
 const pageStyles = {
   formContainer: {
-    ...globalStyles.card,
     maxWidth: '600px',
     margin: '2rem auto',
     padding: '40px',
+    background: 'var(--white)',
+    borderRadius: 12,
+    boxShadow: '0 4px 25px var(--shadow)',
+    border: '1px solid var(--border)',
   },
   formGroup: {
     marginBottom: '1.5rem',
@@ -16,20 +20,19 @@ const pageStyles = {
     fontWeight: '600',
     marginBottom: '8px',
     display: 'block',
-    color: PALETTE.textDark,
+    color: 'var(--text-dark)',
   },
   inputBase: {
     width: '100%',
     padding: '12px',
     borderRadius: '8px',
-    border: `2px solid ${PALETTE.border}`,
-    backgroundColor: PALETTE.backgroundLight,
+    border: `2px solid var(--border)`,
+    backgroundColor: 'var(--background-light)',
     fontSize: '1rem',
     outline: 'none',
   },
   buttonDisabled: {
-    ...globalStyles.button,
-    backgroundColor: PALETTE.textMedium,
+    backgroundColor: 'var(--text-medium)',
     cursor: 'not-allowed',
     boxShadow: 'none',
   }
@@ -63,10 +66,10 @@ function SolicitarRanking() {
   };
 
   return (
-    <div style={globalStyles.pageContent}>
-      <div style={pageStyles.formContainer}>
-        <h1 style={globalStyles.h1}>📢 Solicitar Abertura de Ranking</h1>
-        <p style={{ color: PALETTE.textMedium, marginBottom: 24 }}>
+    <div className="page-content">
+      <div className="global-card" style={pageStyles.formContainer}>
+        <h1 className="global-h1">📢 Solicitar Abertura de Ranking</h1>
+        <p style={{ color: 'var(--text-medium)', marginBottom: 24 }}>
           Preencha o formulário abaixo para sugerir a abertura de um ranking para um concurso que ainda não está cadastrado na plataforma. Nossa equipe irá analisar sua solicitação!
         </p>
         <form onSubmit={handleSubmit}>
@@ -142,7 +145,7 @@ function SolicitarRanking() {
           </div>
           <button 
             type="submit" 
-            style={isLoading ? pageStyles.buttonDisabled : globalStyles.button}
+            className={isLoading ? 'global-button-disabled' : 'global-button'}
             disabled={isLoading}
           >
             {isLoading ? 'Enviando...' : 'Solicitar Ranking'}

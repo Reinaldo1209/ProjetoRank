@@ -1,7 +1,7 @@
 // src/pages/Cadastro.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { PALETTE, globalStyles } from './globalStyles';
+// styles moved to src/pages/global.css (CSS variables + utility classes)
 import { useAuth } from '../context/AuthContext';
 
 // --- ÍCONES (SVG Paths) ---
@@ -33,24 +33,29 @@ const pageStyles = {
         alignItems: 'center',
         justifyContent: 'center',
         padding: '2rem',
-        backgroundColor: PALETTE.backgroundGradient,
+        background: 'var(--background-gradient)',
         borderRadius: '16px',
         textAlign: 'center',
-        color: PALETTE.textDark,
+        color: 'var(--text-dark)',
     },
     inputGroup: {
         position: 'relative',
         marginBottom: '1rem',
     },
     input: {
-        ...globalStyles.inputBase,
+        width: '100%',
+        padding: '12px',
+        borderRadius: '8px',
+        border: '2px solid var(--border)',
+        backgroundColor: 'var(--background-light)',
+        fontSize: '1rem',
         paddingLeft: '40px',
     },
     inputIcon: {
         position: 'absolute',
         left: '12px',
         top: '14px', // Alinhado com o input
-        color: PALETTE.textMedium,
+        color: 'var(--text-medium)',
     },
     validationMessage: {
         fontSize: '0.85rem',
@@ -60,7 +65,7 @@ const pageStyles = {
     passwordStrengthMeter: {
         height: '8px',
         width: '100%',
-        backgroundColor: PALETTE.border,
+        backgroundColor: 'var(--border)',
         borderRadius: '4px',
         marginTop: '8px',
         overflow: 'hidden',
@@ -142,28 +147,29 @@ function Cadastro() {
     const strength = strengthLevels[passwordStrength];
 
     return (
-        <div style={pageStyles.layoutContainer}>
-            <div style={pageStyles.formSide}>
-                <h1 style={globalStyles.h1}>Crie sua Conta</h1>
-                <p style={{ ...globalStyles.subtitle, textAlign: 'left', marginBottom: '2rem' }}>
+        <div className="container py-4">
+            <div className="row">
+                <div className="col-lg-6" style={pageStyles.formSide}>
+                <h1 className="global-h1">Crie sua Conta</h1>
+                <p className="subtitle" style={{ textAlign: 'left', marginBottom: '2rem' }}>
                     Junte-se à comunidade e comece a trilhar seu caminho para a aprovação!
                 </p>
 
                 <form onSubmit={handleSubmit}>
                     {/* Campos do formulário */}
-                    <div style={pageStyles.inputGroup}>
-                        <div style={pageStyles.inputIcon}><svg width="20" height="20" viewBox="0 0 24 24"><path d={ICONS.user} fill="currentColor" /></svg></div>
-                        <input name="nome" type="text" placeholder="Nome Completo" value={formData.nome} onChange={handleChange} style={pageStyles.input} required />
-                    </div>
+                        <div style={pageStyles.inputGroup}>
+                            <div style={pageStyles.inputIcon}><svg width="20" height="20" viewBox="0 0 24 24"><path d={ICONS.user} fill="currentColor" /></svg></div>
+                            <input className="form-control mb-3 input-base" name="nome" type="text" placeholder="Nome Completo" value={formData.nome} onChange={handleChange} style={{ paddingLeft: '40px' }} required />
+                        </div>
                     <div style={pageStyles.inputGroup}>
                         <div style={pageStyles.inputIcon}><svg width="20" height="20" viewBox="0 0 24 24"><path d={ICONS.email} fill="currentColor" /></svg></div>
-                        <input name="email" type="email" placeholder="Seu melhor e-mail" value={formData.email} onChange={handleChange} style={pageStyles.input} required />
+                        <input className="form-control mb-3 input-base" name="email" type="email" placeholder="Seu melhor e-mail" value={formData.email} onChange={handleChange} style={{ paddingLeft: '40px' }} required />
                     </div>
 
                     {/* Campo Senha com Medidor de Força */}
                     <div style={pageStyles.inputGroup}>
                         <div style={pageStyles.inputIcon}><svg width="20" height="20" viewBox="0 0 24 24"><path d={ICONS.lock} fill="currentColor" /></svg></div>
-                        <input name="senha" type={showPassword ? 'text' : 'password'} placeholder="Crie uma senha" value={formData.senha} onChange={handleChange} style={pageStyles.input} required />
+                        <input className="form-control mb-3 input-base" name="senha" type={showPassword ? 'text' : 'password'} placeholder="Crie uma senha" value={formData.senha} onChange={handleChange} style={{ paddingLeft: '40px' }} required />
                         <div style={pageStyles.passwordStrengthMeter}><div style={{...pageStyles.strengthBar, width: strength.width, backgroundColor: strength.color}}></div></div>
                         {formData.senha && <p style={{...pageStyles.validationMessage, color: strength.color}}>{strength.label}</p>}
                     </div>
@@ -171,7 +177,7 @@ function Cadastro() {
                     {/* Campo Confirmar Senha com Validação */}
                     <div style={pageStyles.inputGroup}>
                         <div style={pageStyles.inputIcon}><svg width="20" height="20" viewBox="0 0 24 24"><path d={ICONS.lock} fill="currentColor" /></svg></div>
-                        <input name="confirmaSenha" type={showPassword ? 'text' : 'password'} placeholder="Confirme sua senha" value={formData.confirmaSenha} onChange={handleChange} style={pageStyles.input} required />
+                        <input className="form-control mb-3 input-base" name="confirmaSenha" type={showPassword ? 'text' : 'password'} placeholder="Confirme sua senha" value={formData.confirmaSenha} onChange={handleChange} style={{ paddingLeft: '40px' }} required />
                         {formData.confirmaSenha && (
                             <p style={{...pageStyles.validationMessage, color: validation.senhaMatch ? strengthLevels[5].color : strengthLevels[1].color}}>
                                 {validation.senhaMatch ? '✓ As senhas coincidem' : '✗ As senhas não coincidem'}
@@ -181,16 +187,16 @@ function Cadastro() {
                     
                     {/* Botão de Envio e Link para Login */}
                     {error && <p style={{ color: 'red', marginBottom: '1rem' }}>{error}</p>}
-                    <button type="submit" style={isLoading ? globalStyles.buttonDisabled : globalStyles.button} disabled={isLoading}>
+                    <button type="submit" className={isLoading ? 'global-button-disabled btn btn-primary' : 'global-button btn btn-primary'} disabled={isLoading}>
                         {isLoading ? 'Criando...' : 'Criar Conta'}
                     </button>
-                    <p style={{ textAlign: 'center', marginTop: '1.5rem', color: PALETTE.textMedium }}>
-                        Já tem uma conta? <Link to="/login" style={{ color: PALETTE.primary, fontWeight: '600' }}>Faça login</Link>
+                    <p style={{ textAlign: 'center', marginTop: '1.5rem', color: 'var(--text-medium)' }}>
+                        Já tem uma conta? <Link to="/login" style={{ color: 'var(--primary)', fontWeight: '600' }}>Faça login</Link>
                     </p>
                 </form>
             </div>
-            
-            <div style={pageStyles.illustrationSide}>
+
+            <div className="col-lg-6" style={pageStyles.illustrationSide}>
                 <div>
                     <h2>🎯</h2>
                     <h2 style={{ fontSize: '2rem', marginBottom: '1rem' }}>Sua Jornada Começa Agora</h2>
@@ -198,6 +204,7 @@ function Cadastro() {
                 </div>
             </div>
         </div>
+    </div>
     );
 }
 

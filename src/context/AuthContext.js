@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { getApiUrl } from '../api';
+import { getApiUrl, authFetch } from '../api';
 import { setToken, getToken, removeToken, isTokenValid } from '../utils/jwt';
 
 const AuthContext = createContext();
@@ -11,15 +11,18 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const token = getToken();
     if (token && isTokenValid(token)) {
-      fetch(getApiUrl('/auth'), {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-        .then(res => res.json())
+      // Try to fetch current user using authFetch (backend should return user info at GET /auth)
+      authFetch('/auth')
+        .then(res => {
+          if (!res.ok) throw new Error('Unauthorized');
+          return res.json();
+        })
         .then(data => {
           setUser(data);
           setLoading(false);
         })
         .catch(() => {
+          // If fetching user failed, remove token and treat as logged out
           removeToken();
           setUser(null);
           setLoading(false);
@@ -30,15 +33,28 @@ export function AuthProvider({ children }) {
   }, []);
 
   async function login(email, senha) {
-    const res = await fetch(getApiUrl('/auth/login'), {
+    const res = await fetch(getApiUrl('/Auth/login'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, senha })
     });
     if (res.ok) {
-      const { token, usuario } = await res.json();
+      const data = await res.json();
+      // backend returns { token } according to your controller; attempt to extract user if provided
+      const token = data.token || data;
       setToken(token);
-      setUser(usuario);
+      // after storing token, fetch user profile
+      try {
+        const userRes = await authFetch('/auth');
+        if (userRes.ok) {
+          const usuario = await userRes.json();
+          setUser(usuario);
+        } else {
+          setUser(null);
+        }
+      } catch {
+        setUser(null);
+      }
       return true;
     }
     return false;
@@ -50,7 +66,7 @@ export function AuthProvider({ children }) {
   }
 
   async function cadastro(data, isAdmin = false) {
-    const url = isAdmin ? '/auth/cadastro-admin' : '/auth/cadastro';
+    const url = isAdmin ? '/Auth/cadastro-admin' : '/auth/cadastro';
     const res = await fetch(getApiUrl(url), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -60,7 +76,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, cadastro }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, cadastro, isLoggedIn: !!user }}>
       {children}
     </AuthContext.Provider>
   );

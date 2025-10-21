@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { getApiUrl } from '../api';
-import { globalStyles } from './globalStyles';
+import { getApiUrl, authFetch } from '../api';
 
 function CadastroPergunta() {
   const [form, setForm] = useState({ texto: '', peso: '', disciplinaId: '' });
@@ -17,7 +16,7 @@ function CadastroPergunta() {
     setLoading(true);
     setError(null);
     setSuccess(false);
-    const res = await fetch(getApiUrl('/pergunta'), {
+    const res = await authFetch('/pergunta', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -36,13 +35,13 @@ function CadastroPergunta() {
   };
 
   return (
-    <div style={globalStyles.pageContent}>
-      <h2>Cadastro de Pergunta</h2>
+    <div className="page-content">
+      <h2 className="global-h2">Cadastro de Pergunta</h2>
       <form onSubmit={handleSubmit} style={{ maxWidth: 400 }}>
-        <input name="texto" value={form.texto} onChange={handleChange} placeholder="Texto da pergunta" required style={globalStyles.inputBase} />
-        <input name="peso" value={form.peso} onChange={handleChange} placeholder="Peso" required type="number" step="0.1" style={globalStyles.inputBase} />
-        <input name="disciplinaId" value={form.disciplinaId} onChange={handleChange} placeholder="ID da Disciplina" required type="number" style={globalStyles.inputBase} />
-        <button type="submit" style={globalStyles.button} disabled={loading}>{loading ? 'Enviando...' : 'Cadastrar'}</button>
+        <input name="texto" value={form.texto} onChange={handleChange} placeholder="Texto da pergunta" required className="input-base" />
+        <input name="peso" value={form.peso} onChange={handleChange} placeholder="Peso" required type="number" step="0.1" className="input-base" />
+        <input name="disciplinaId" value={form.disciplinaId} onChange={handleChange} placeholder="ID da Disciplina" required type="number" className="input-base" />
+        <button type="submit" className="global-button" disabled={loading}>{loading ? 'Enviando...' : 'Cadastrar'}</button>
         {success && <p style={{ color: 'green' }}>Pergunta cadastrada com sucesso!</p>}
         {error && <p style={{ color: 'red' }}>{error}</p>}
       </form>

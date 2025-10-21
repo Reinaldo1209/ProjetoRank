@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { getApiUrl } from '../api';
-import { getToken } from '../utils/jwt';
+import { getApiUrl, authFetch } from '../api';
 
 const ConcursosContext = createContext();
 
@@ -13,7 +12,7 @@ export function ConcursosProvider({ children }) {
   useEffect(() => {
     async function fetchConcursos() {
       setLoading(true);
-      const res = await fetch(getApiUrl('/concurso'));
+  const res = await authFetch('/concurso');
       if (res.ok) {
         const data = await res.json();
         setConcursos(data);
@@ -24,12 +23,10 @@ export function ConcursosProvider({ children }) {
   }, []);
 
   async function adicionarConcurso(novo) {
-    const token = getToken();
-    const res = await fetch(getApiUrl('/concurso'), {
+    const res = await authFetch('/concurso', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify(novo)
     });
@@ -42,10 +39,8 @@ export function ConcursosProvider({ children }) {
   }
 
   async function excluirConcurso(id) {
-    const token = getToken();
-    const res = await fetch(getApiUrl(`/concurso/${id}`), {
-      method: 'DELETE',
-      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    const res = await authFetch(`/concurso/${id}`, {
+      method: 'DELETE'
     });
     if (res.ok) {
       setConcursos(prev => prev.filter(c => c.id !== id));
@@ -55,12 +50,10 @@ export function ConcursosProvider({ children }) {
   }
 
   async function atualizarConcurso(concursoEditado) {
-    const token = getToken();
-    const res = await fetch(getApiUrl(`/concurso/${concursoEditado.id}`), {
+    const res = await authFetch(`/concurso/${concursoEditado.id}`, {
       method: 'PUT',
       headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify(concursoEditado)
     });

@@ -1,21 +1,21 @@
 // src/pages/Concursos.js
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { PALETTE, globalStyles } from './globalStyles';
+// styles moved to src/pages/global.css (CSS variables + utility classes)
 import { useConcursos } from '../context/ConcursosContext';
 import { useAuth } from '../context/AuthContext';
 
 const ConcursoCard = ({ concurso }) => (
-  <div style={{ ...globalStyles.card, minHeight: 180, position: 'relative' }}>
+  <div className="global-card" style={{ minHeight: 180, position: 'relative' }}>
     {concurso.logo && (
       <img src={concurso.logo} alt="Logo" style={{ maxWidth: 80, maxHeight: 80, position: 'absolute', top: 12, left: 12, borderRadius: 8, border: '1px solid #ccc' }} />
     )}
-    <h3 style={{ marginBottom: '8px', color: PALETTE.textDark, marginLeft: concurso.logo ? 100 : 0 }}>{concurso.nome}</h3>
+  <h3 style={{ marginBottom: '8px', color: 'var(--text-dark)', marginLeft: concurso.logo ? 100 : 0 }}>{concurso.nome}</h3>
     <p><strong>Organizadora:</strong> {concurso.organizadora}</p>
     <p><strong>Data da Prova:</strong> {concurso.dataProva}</p>
     <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
       <EnviarGabaritoButton />
-      <Link to={`/ranking/${concurso.id}`} style={{ ...globalStyles.button, background: '#7C5C3B', color: '#fff', display: 'inline-block' }}>
+      <Link to={`/ranking/${concurso.id}`} className="global-button" style={{ background: '#7C5C3B', color: '#fff', display: 'inline-block' }}>
         Ver Ranking
       </Link>
     </div>
@@ -27,7 +27,8 @@ function EnviarGabaritoButton() {
   return (
     <Link
       to={isLoggedIn ? "/formulario" : "/login"}
-      style={{ ...globalStyles.button, display: 'inline-block' }}
+      className="global-button"
+      style={{ display: 'inline-block' }}
     >
       Enviar Gabarito
     </Link>
@@ -61,12 +62,12 @@ function Concursos() {
   };
 
   return (
-    <div style={globalStyles.pageContent}>
-      <h1 style={globalStyles.h1}>📚 Concursos Abertos</h1>
-      <p style={globalStyles.subtitle}>Confira abaixo os concursos com ranking ativo. Escolha um e envie seu gabarito!</p>
+    <div className="page-content">
+      <h1 className="global-h1">📚 Concursos Abertos</h1>
+      <p className="subtitle">Confira abaixo os concursos com ranking ativo. Escolha um e envie seu gabarito!</p>
       {/* Barra de pesquisa com autocomplete */}
       <div style={{ position: 'relative', maxWidth: 400, marginBottom: 32 }}>
-        <input
+          <input
           type="text"
           placeholder="Buscar concurso pelo nome..."
           value={buscaConcurso}
@@ -82,8 +83,8 @@ function Concursos() {
             width: '100%',
             padding: '12px',
             borderRadius: '8px',
-            border: `2px solid ${PALETTE.border}`,
-            backgroundColor: PALETTE.backgroundLight,
+              border: `2px solid var(--border)`,
+              backgroundColor: 'var(--background-light)',
             fontSize: '1rem',
             outline: 'none',
             marginBottom: 0,
@@ -117,7 +118,7 @@ function Concursos() {
                 style={{
                   padding: '10px 16px',
                   background: highlightedIdx === idx ? '#eaf6fb' : '#fff',
-                  color: highlightedIdx === idx ? PALETTE.primary : PALETTE.textDark,
+                  color: highlightedIdx === idx ? 'var(--primary)' : 'var(--text-dark)',
                   cursor: 'pointer',
                   fontWeight: highlightedIdx === idx ? 'bold' : 'normal',
                 }}

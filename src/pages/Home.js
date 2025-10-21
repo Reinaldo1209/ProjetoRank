@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { PALETTE, globalStyles } from './globalStyles';
+// styles moved to src/pages/global.css (CSS variables + utility classes)
 import { useAuth } from '../context/AuthContext';
 
 // Ícone SVG genérico
@@ -24,15 +24,15 @@ const pageStyles = {
     textAlign: 'center',
     padding: '80px 20px',
     width: '100%',
-    background: PALETTE.backgroundGradient,
+    background: 'var(--background-gradient)',
   },
   heroTitle: {
-    ...globalStyles.h1,
-    color: PALETTE.textDark,
+    // using CSS class global-h1 in markup; keep color var here for inline uses
+    color: 'var(--text-dark)',
   },
   subtitle: {
     fontSize: 'clamp(1.2rem, 3vw, 1.5rem)',
-    color: PALETTE.textMedium,
+    color: 'var(--text-medium)',
     marginBottom: '12px',
     fontWeight: '400',
     maxWidth: '650px',
@@ -46,64 +46,73 @@ const pageStyles = {
   },
   cardTitle: {
     fontSize: '1.5rem',
-    color: PALETTE.textDark,
+    color: 'var(--text-dark)',
     marginBottom: '12px',
   },
   cardDescription: {
     fontSize: '1rem',
-    color: PALETTE.textMedium,
+    color: 'var(--text-medium)',
     lineHeight: '1.5',
   },
 };
 
 // Card de recurso principal
-const FeatureCard = ({ title, description, linkTo, icon }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  const cardStyle = {
-    ...globalStyles.card,
-    ...(isHovered ? globalStyles.cardHover : {}),
-  };
+const FeatureCard = ({ title, description, linkTo, icon, index }) => {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    // small stagger based on index
+    const timeout = setTimeout(() => setMounted(true), (index || 0) * 120);
+    return () => clearTimeout(timeout);
+  }, [index]);
+
   return (
-    <Link to={linkTo} style={cardStyle} onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
-      <div style={{ color: PALETTE.primary, marginBottom: '16px' }}>{icon}</div>
-      <h3 style={pageStyles.cardTitle}>{title}</h3>
-      <p style={pageStyles.cardDescription}>{description}</p>
+    <Link to={linkTo} className={`feature-card ${mounted ? 'visible animate' : ''}`} style={{ textDecoration: 'none' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div className="feature-icon" aria-hidden>{icon}</div>
+        <div>
+          <h3 className="feature-card-title">{title}</h3>
+          <p className="feature-card-desc">{description}</p>
+        </div>
+      </div>
     </Link>
   );
 };
 
 function Home() {
-  const [isHovered, setIsHovered] = useState(false);
   const { isLoggedIn } = useAuth();
 
   return (
     <>
-      <header style={pageStyles.hero}>
-        <h1 style={pageStyles.heroTitle}>🎯 Bem-vindo ao Rank.Ou</h1>
+    <header className="bg-beige-gradient" style={pageStyles.hero}>
+      <h1 className="global-h1">🎯 Bem-vindo ao Rank.Ou</h1>
         <p style={pageStyles.subtitle}>
           A sua plataforma completa para simular e acompanhar seu desempenho em concursos públicos.
         </p>
-        <Link 
-            to="/formulario" 
-            style={{ ...globalStyles.button, ...(isHovered ? globalStyles.buttonHover : {}) }}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-        >
+    <Link to="/formulario" className="global-button">
           <Icon path={ICONS.form} style={{ marginRight: '8px' }}/>
           Inserir Meu Gabarito Agora
         </Link>
       </header>
 
-      <main style={globalStyles.pageContent}>
-        <h2 style={globalStyles.h2}>Recursos Principais</h2>
-        <div style={pageStyles.featuresGrid}>
-          <FeatureCard title="Solicitar abertura de ranking" description="Peça para abrir um ranking para um concurso que ainda não está na plataforma." linkTo="/solicitar-ranking" icon={<Icon path={ICONS.ranking} />} />
-          {isLoggedIn ? (
-            <FeatureCard title="Meus Concursos" description="Veja os concursos que você já se cadastrou." linkTo="/meus-concursos" icon={<Icon path={ICONS.register} />} />
-          ) : (
-            <FeatureCard title="Cadastro de Conta" description="Salve seu histórico e acompanhe múltiplos concursos." linkTo="/cadastro" icon={<Icon path={ICONS.register} />} />
-          )}
-          <FeatureCard title="Concursos Recentes" description="Navegue por uma lista de concursos com rankings abertos." linkTo="/concursos" icon={<Icon path={ICONS.contests} />} />
+      <main className="page-content">
+        <div className="container">
+          <h2 className="global-h2">Recursos Principais</h2>
+          {/* Bootstrap row/cols for responsiveness; keep inline grid as fallback */}
+          <div className="row" style={{ marginTop: 8 }}>
+            <div className="col-sm-12 col-md-6 col-lg-4" style={{ marginBottom: 24 }}>
+              <FeatureCard index={0} title="Solicitar abertura de ranking" description="Peça para abrir um ranking para um concurso que ainda não está na plataforma." linkTo="/solicitar-ranking" icon={<Icon path={ICONS.ranking} />} />
+            </div>
+            <div className="col-sm-12 col-md-6 col-lg-4" style={{ marginBottom: 24 }}>
+              {isLoggedIn ? (
+                <FeatureCard index={1} title="Meus Concursos" description="Veja os concursos que você já se cadastrou." linkTo="/meus-concursos" icon={<Icon path={ICONS.register} />} />
+              ) : (
+                <FeatureCard index={1} title="Cadastro de Conta" description="Salve seu histórico e acompanhe múltiplos concursos." linkTo="/cadastro" icon={<Icon path={ICONS.register} />} />
+              )}
+            </div>
+            <div className="col-sm-12 col-md-6 col-lg-4" style={{ marginBottom: 24 }}>
+              <FeatureCard index={2} title="Concursos Recentes" description="Navegue por uma lista de concursos com rankings abertos." linkTo="/concursos" icon={<Icon path={ICONS.contests} />} />
+            </div>
+          </div>
         </div>
       </main>
     </>

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { getApiUrl } from '../api';
+import { getApiUrl, authFetch } from '../api';
 import { useAuth } from '../context/AuthContext';
-import { globalStyles } from './globalStyles';
 
 function CadastroDisciplina() {
   const { user } = useAuth();
@@ -19,7 +18,7 @@ function CadastroDisciplina() {
     setLoading(true);
     setError(null);
     setSuccess(false);
-    const res = await fetch(getApiUrl('/disciplina'), {
+    const res = await authFetch('/disciplina', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -38,16 +37,18 @@ function CadastroDisciplina() {
   };
 
   return (
-    <div style={globalStyles.pageContent}>
-      <h2>Cadastro de Disciplina</h2>
-      <form onSubmit={handleSubmit} style={{ maxWidth: 400 }}>
-        <input name="nome" value={form.nome} onChange={handleChange} placeholder="Nome da disciplina" required style={globalStyles.inputBase} />
-        <input name="peso" value={form.peso} onChange={handleChange} placeholder="Peso" required type="number" step="0.1" style={globalStyles.inputBase} />
-        <input name="concursoId" value={form.concursoId} onChange={handleChange} placeholder="ID do Concurso" required type="number" style={globalStyles.inputBase} />
-        <button type="submit" style={globalStyles.button} disabled={loading}>{loading ? 'Enviando...' : 'Cadastrar'}</button>
-        {success && <p style={{ color: 'green' }}>Disciplina cadastrada com sucesso!</p>}
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-      </form>
+    <div className="container py-4">
+      <div className="page-content">
+        <h2 className="global-h2">Cadastro de Disciplina</h2>
+        <form onSubmit={handleSubmit} style={{ maxWidth: 400 }}>
+          <input className="form-control mb-3 input-base" name="nome" value={form.nome} onChange={handleChange} placeholder="Nome da disciplina" required />
+          <input className="form-control mb-3 input-base" name="peso" value={form.peso} onChange={handleChange} placeholder="Peso" required type="number" step="0.1" />
+          <input className="form-control mb-3 input-base" name="concursoId" value={form.concursoId} onChange={handleChange} placeholder="ID do Concurso" required type="number" />
+          <button type="submit" className="global-button btn btn-primary" disabled={loading}>{loading ? 'Enviando...' : 'Cadastrar'}</button>
+          {success && <p style={{ color: 'green' }}>Disciplina cadastrada com sucesso!</p>}
+          {error && <p style={{ color: 'red' }}>{error}</p>}
+        </form>
+      </div>
     </div>
   );
 }
