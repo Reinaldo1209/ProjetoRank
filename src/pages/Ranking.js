@@ -1,18 +1,12 @@
-// ...imports...
-// src/pages/Ranking.js
 import React, { useState, useEffect } from 'react';
 import { usePayment } from '../context/PaymentContext';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { useConcursos } from '../context/ConcursosContext';
 import { useAuth } from '../context/AuthContext';
-// Supondo que globalStyles.js está em ../styles/globalStyles.js
 // styles moved to src/pages/global.css (CSS variables + utility classes)
 
 import { getApiUrl, authFetch } from '../api';
-
-// --- LÓGICA DE CÁLCULO ---
-// Removido mock, cálculo será feito com dados reais
 
 // --- ESTILOS DA PÁGINA ---
 const pageStyles = {
@@ -24,12 +18,16 @@ const pageStyles = {
     marginBottom: '2rem',
   },
   statCard: {
-    padding: '20px',
+    padding: '24px',
     textAlign: 'center',
     backgroundColor: 'var(--white)',
     borderRadius: 12,
     boxShadow: '0 4px 25px var(--shadow)',
-    border: '1px solid var(--border)'
+    border: '1px solid var(--border)',
+    minHeight: '130px', // Altura mínima para consistência
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
   },
   statLabel: {
     fontSize: '0.9rem',
@@ -38,7 +36,7 @@ const pageStyles = {
     textTransform: 'uppercase',
   },
   statValue: {
-    fontSize: '2rem',
+    fontSize: '2.2rem',
     fontWeight: '700',
     color: 'var(--primary)',
   },
@@ -49,6 +47,7 @@ const pageStyles = {
     marginBottom: '2rem',
     paddingBottom: '1rem',
     borderBottom: `2px solid var(--border)`,
+    flexWrap: 'wrap', // Permite quebra de linha em telas menores
   },
   subNavLink: {
     padding: '8px 16px',
@@ -57,15 +56,18 @@ const pageStyles = {
     fontWeight: '600',
     borderRadius: '8px',
     transition: 'all 0.3s ease',
+    border: '2px solid transparent',
   },
   subNavLinkActive: {
-    backgroundColor: 'var(--primary)',
-    color: 'var(--white)',
+    backgroundColor: 'var(--beige-contrast)',
+    color: 'var(--primary)',
+    border: '2px solid var(--border)',
   },
   // Estilos da Tabela (refinados)
   table: {
     width: '100%',
-    borderCollapse: 'collapse',
+    borderCollapse: 'separate', // Necessário para border-radius
+    borderSpacing: 0,
     marginTop: '2rem',
     backgroundColor: 'var(--white)',
     borderRadius: '8px',
@@ -88,8 +90,10 @@ const pageStyles = {
   },
   // Linha do usuário destacada com cor do tema
   userHighlight: {
-    backgroundColor: '#FEF7EC', // Um creme/pêssego bem claro da paleta
-    fontWeight: '600',
+    backgroundColor: '#FEF7EC', // Um creme/pêssego bem claro
+    fontWeight: '700',
+    borderLeft: '4px solid var(--primary)',
+    borderRight: '4px solid var(--primary)',
   },
   // Linhas zebradas para melhor leitura
   evenRow: {
@@ -97,157 +101,181 @@ const pageStyles = {
   }
 };
 
+const FILTROS = ['Ampla Concorrência', 'PPP', 'PCD', 'Indígena'];
+
 function Ranking() {
   const { paidConcursoIds } = usePayment();
   const navigate = useNavigate();
   const { id } = useParams();
   const { concursos } = useConcursos();
+  const { user, isLoggedIn } = useAuth(); // Autenticação real
   const concurso = id ? concursos.find(c => String(c.id) === String(id)) : null;
+  
   const [ranking, setRanking] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeFilter, setActiveFilter] = useState('Ampla Concorrência');
-  const isAdmin = false;
+  const [activeFilter, setActiveFilter] = useState(FILTROS[0]);
+  const [vagasParaFiltro, setVagasParaFiltro] = useState(0);
+  
+  const isAdmin = false; // Simulação de admin
 
+  // 1. Busca os dados brutos do ranking
   useEffect(() => {
     async function fetchRanking() {
-      if (!id) return;
-      setLoading(true);
-      const res = await authFetch(`/concurso/${id}/ranking`);
-      if (res.ok) {
-        const data = await res.json();
-        setRanking(data);
+      if (!id || !user) { // Espera o user carregar
+        setLoading(false);
+        return;
       }
-      setLoading(false);
+      setLoading(true);
+      try {
+        const res = await authFetch(`/concurso/${id}/ranking`);
+        if (res.ok) {
+          const data = await res.json(); // API: [{ usuarioId: 1, notaTotal: 2 }, ...]
+          
+          // Ordena e transforma os dados
+          const sortedData = data.sort((a, b) => b.notaTotal - a.notaTotal);
+          
+          const transformedData = sortedData.map((item, index) => {
+            const isCurrentUser = user && user.id === item.usuarioId;
+            
+            return {
+              posicao: index + 1,
+              nota: item.notaTotal,
+              usuarioId: item.usuarioId,
+              // Anônimiza outros usuários, destaca o atual
+              nome: isCurrentUser ? (user.nome || 'Você') : `Candidato #${item.usuarioId}`,
+              avatar: isCurrentUser ? (user.avatar || null) : null,
+              isUser: isCurrentUser,
+            };
+          });
+          
+          setRanking(transformedData);
+        } else {
+          console.error("Erro ao buscar ranking");
+          setRanking([]);
+        }
+      } catch (error) {
+        console.error("Erro na requisição do ranking:", error);
+      } finally {
+        setLoading(false);
+      }
     }
     fetchRanking();
-  }, [id]);
+  }, [id, user]); // Recarrega se o ID do concurso ou o usuário mudar
 
+  // 2. Redireciona se não tiver pago (exceto admin)
   useEffect(() => {
-    if (isAdmin) return;
-    if (concurso && !paidConcursoIds.includes(concurso.id)) {
-      navigate('/checkout');
+    if (isAdmin || !concurso) return;
+    if (!paidConcursoIds.includes(concurso.id)) {
+      // navigate('/checkout'); // Descomente para ativar o paywall
     }
   }, [concurso, paidConcursoIds, navigate, isAdmin]);
 
-  const numeroDeVagas = concurso?.numeroVagas || concurso?.vagas || 0;
-  const numeroDeQuestoes = concurso?.qtdQuestoes || 0;
+  // 3. Atualiza o número de vagas para o cálculo da nota de corte
+  useEffect(() => {
+    if (!concurso) return;
+    
+    let vagas = 0;
+    switch (activeFilter) {
+      case 'Ampla Concorrência':
+        vagas = concurso.vagasAmpla || 0;
+        break;
+      case 'PCD':
+        vagas = concurso.vagasPCD || 0;
+        break;
+      case 'PPP':
+        vagas = concurso.vagasPPP || 0;
+        break;
+      case 'Indígena':
+        vagas = concurso.vagasPI || 0;
+        break;
+      default:
+        vagas = concurso.vagasAmpla || 0;
+    }
+    setVagasParaFiltro(vagas);
+  }, [activeFilter, concurso]);
+
+
+  // --- Variáveis Calculadas para Renderização ---
+  
   const numeroDeInscritos = ranking.length;
-  // Autenticação real
-  const { user, isLoggedIn } = useAuth();
-  // Simulação de inscrição (ajuste conforme lógica real)
-  const usuarioInscrito = false; // Exemplo: false = não inscrito
-  const usuario = ranking.find(c => c.nome === (user?.nome || 'Você'));
-  const suaPosicao = user && usuarioInscrito && usuario ? usuario.posicao : null;
-  const notaDeCorte = ranking.length >= numeroDeVagas && numeroDeVagas > 0
-    ? ranking[numeroDeVagas - 1].nota.toFixed(2)
+  const usuarioNoRanking = ranking.find(r => r.isUser);
+  const suaPosicao = usuarioNoRanking ? usuarioNoRanking.posicao : null;
+  const usuarioInscrito = !!usuarioNoRanking;
+
+  // Calcula a nota de corte baseada no filtro de vagas
+  const notaDeCorte = ranking.length >= vagasParaFiltro && vagasParaFiltro > 0
+    ? ranking[vagasParaFiltro - 1].nota.toFixed(2)
     : 'N/A';
+    
+  // Calcula o total de vagas para o card do cabeçalho
+  const totalVagas = concurso 
+    ? (concurso.vagasAmpla || 0) + (concurso.vagasPPP || 0) + (concurso.vagasPCD || 0) + (concurso.vagasPI || 0)
+    : 0;
 
   return (
     <div className="page-content">
-      <h1 className="global-h1">📊 Ranking do Concurso</h1>
-      {concurso && (
+      <h1 className="global-h1" style={{ textAlign: 'center' }}>📊 Ranking do Concurso</h1>
+      
+      {/* Card do Concurso Selecionado */}
+      {concurso ? (
         <div className="global-card" style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
-          {concurso.logo && (
-            <img src={concurso.logo} alt="Logo" style={{ maxWidth: 80, maxHeight: 80, borderRadius: 8, border: '1px solid #ccc', flexShrink: 0 }} />
-          )}
+          {/* Logo removido pois não vem da API de Concurso */}
           <div style={{ minWidth: 220 }}>
-            <h2 className="text-primary" style={{ marginBottom: 8 }}>{concurso.nome}</h2>
-            <p><strong>Organizadora:</strong> {concurso.organizadora}</p>
-            <p><strong>Data da Prova:</strong> {concurso.dataProva}</p>
-            <p><strong>Vagas:</strong> {numeroDeVagas}</p>
-            <p><strong>Questões:</strong> {numeroDeQuestoes}</p>
+            <h2 className="text-primary" style={{ marginBottom: 8, fontSize: '1.75rem' }}>{concurso.nome}</h2>
+            <p style={{ margin: '4px 0' }}><strong>Banca:</strong> {concurso.banca}</p>
+            <p style={{ margin: '4px 0' }}><strong>Vagas Totais:</strong> {totalVagas}</p>
+            <p style={{ margin: '4px 0' }}><strong>Questões:</strong> {concurso.qtdQuestoes || 'N/A'}</p>
+            <p style={{ margin: '4px 0' }}><strong>Tipo:</strong> {concurso.tipoProva}</p>
           </div>
         </div>
+      ) : (
+        <p style={{ textAlign: 'center' }}>Selecione um concurso para ver o ranking.</p>
       )}
-  <p>Veja sua colocação e compare seu desempenho com outros candidatos.</p>
-  <div className="d-flex flex-wrap justify-content-center" style={{ gap: 32, margin: '24px 0' }}>
-        {concursos.map((c) => (
-          <div key={c.id} className="text-center" style={{ width: 100, minWidth: 100, marginBottom: 12 }}>
-            <button
-              onClick={() => navigate(`/ranking/${c.id}`)}
-              className={`btn ${String(c.id) === String(concurso?.id) ? 'btn-outline-primary' : 'btn-light'}`} 
-              style={{ borderRadius: 8, padding: 8, width: 80, height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              disabled={String(c.id) === String(concurso?.id)}
-              title={c.nome}
-            >
-              {c.logo ? (
-                <img src={c.logo} alt={c.nome} style={{ maxWidth: 64, maxHeight: 64, borderRadius: 6 }} />
-              ) : (
-                <span style={{ fontSize: 12, color: '#aaa' }}>Sem logo</span>
-              )}
-            </button>
-            <div style={{ fontSize: 12, color: String(c.id) === String(concurso?.id) ? 'var(--primary)' : 'var(--text-medium)', fontWeight: String(c.id) === String(concurso?.id) ? 'bold' : 'normal', wordBreak: 'break-word', whiteSpace: 'pre-line', maxWidth: 90, lineHeight: 1.2 }}>{c.nome}</div>
-            {/* Se não tem acesso ao ranking desse concurso */}
-              {String(c.id) !== String(concurso?.id) && !isAdmin && !paidConcursoIds.includes(c.id) && (
-              <div style={{ marginTop: 8, color: '#e74c3c', fontSize: 13 }}>
-                Você não está participando deste ranking.<br />
-                <Link to="/formulario" className="global-button" style={{ fontSize: '0.9rem', marginTop: 6 }}>Participar</Link>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-      <div className="row gx-4 gy-3" style={{ marginTop: '1rem' }}>
-        <div className="col-12 col-md-4">
-          <div className="global-card text-center">
-            <div className="subtitle">Sua Posição</div>
-            {isLoggedIn && usuarioInscrito && suaPosicao ? (
-              <div className="h2">{suaPosicao}º</div>
-            ) : (
-              <Link to={isLoggedIn ? "/formulario" : "/login"} className="global-button" style={{ fontSize: '1rem', padding: '10px 24px', textDecoration: 'none' }}>
-                Cadastre seu Gabarito
-              </Link>
-            )}
-          </div>
+
+      {/* Cards de Stats */}
+      <div style={pageStyles.statsContainer}>
+        <div style={pageStyles.statCard}>
+          <div style={pageStyles.statLabel}>Sua Posição (Geral)</div>
+          {isLoggedIn && usuarioInscrito && suaPosicao ? (
+            <div style={pageStyles.statValue}>{suaPosicao}º</div>
+          ) : (
+            <Link to={isLoggedIn ? `/formulario?concurso=${id}` : "/login"} className="global-button" style={{ fontSize: '1rem', padding: '10px 24px', textDecoration: 'none' }}>
+              Enviar Gabarito
+            </Link>
+          )}
         </div>
-        <div className="col-12 col-md-4">
-          <div className="global-card text-center">
-            <div className="subtitle">Nota de Corte</div>
-            <div className="h2">{notaDeCorte}</div>
-          </div>
+        
+        <div style={pageStyles.statCard}>
+          <div style={pageStyles.statLabel}>Nota de Corte ({activeFilter})</div>
+          <div style={pageStyles.statValue}>{notaDeCorte}</div>
+          <small style={{ color: 'var(--text-medium)', marginTop: '4px' }}>{vagasParaFiltro} vagas</small>
         </div>
-        <div className="col-12 col-md-4">
-          <div className="global-card text-center">
-            <div className="subtitle">Inscritos</div>
-            <div className="h2">{numeroDeInscritos}</div>
-          </div>
+        
+        <div style={pageStyles.statCard}>
+          <div style={pageStyles.statLabel}>Total de Inscritos</div>
+          <div style={pageStyles.statValue}>{numeroDeInscritos}</div>
         </div>
       </div>
 
       {/* --- Barra de Filtros/Navegação Secundária --- */}
       <div style={pageStyles.subNav}>
-        <a 
-          href="#/" 
-          style={activeFilter === 'Ampla Concorrência' ? {...pageStyles.subNavLink, ...pageStyles.subNavLinkActive} : pageStyles.subNavLink} 
-          onClick={(e) => { e.preventDefault(); setActiveFilter('Ampla Concorrência'); }}
-        >
-          Ampla Concorrência
-        </a>
-        <a 
-          href="#/" 
-          style={activeFilter === 'Cotas (PCD)' ? {...pageStyles.subNavLink, ...pageStyles.subNavLinkActive} : pageStyles.subNavLink} 
-          onClick={(e) => { e.preventDefault(); setActiveFilter('Cotas (PCD)'); }}
-        >
-           PCD
-        </a>
-        <a 
-          href="#/" 
-          style={activeFilter === 'PPP' ? {...pageStyles.subNavLink, ...pageStyles.subNavLinkActive} : pageStyles.subNavLink} 
-          onClick={(e) => { e.preventDefault(); setActiveFilter('PPP'); }}
-        >
-          PPP
-        </a>
-        <a 
-          href="#/" 
-          style={activeFilter === 'Indígena' ? {...pageStyles.subNavLink, ...pageStyles.subNavLinkActive} : pageStyles.subNavLink} 
-          onClick={(e) => { e.preventDefault(); setActiveFilter('Indígena'); }}
-        >
-          Indígena
-        </a>
+        {FILTROS.map(filtro => (
+          <a 
+            key={filtro}
+            href="#/" 
+            style={activeFilter === filtro ? {...pageStyles.subNavLink, ...pageStyles.subNavLinkActive} : pageStyles.subNavLink} 
+            onClick={(e) => { e.preventDefault(); setActiveFilter(filtro); }}
+          >
+            {filtro}
+          </a>
+        ))}
       </div>
 
+      {/* --- Tabela do Ranking --- */}
       {loading ? (
-        <p>Carregando ranking...</p>
+        <p style={{ textAlign: 'center' }}>Carregando ranking...</p>
+      ) : numeroDeInscritos === 0 ? (
+        <p style={{ textAlign: 'center' }}>Ninguém enviou o gabarito para este concurso ainda.</p>
       ) : (
         <table style={pageStyles.table}>
           <thead>
@@ -259,22 +287,23 @@ function Ranking() {
           </thead>
           <tbody>
             {ranking.map((item, index) => {
-              const isUser = user && item.nome === user.nome;
-              const isEven = index % 2 === 1;
+              const isEven = index % 2 === 1; // Index 1 (segunda linha) é par
               const rowStyle = {
-                ...(isEven && !isUser && pageStyles.evenRow),
-                ...(isUser && pageStyles.userHighlight),
+                ...(isEven && !item.isUser && pageStyles.evenRow),
+                ...(item.isUser && pageStyles.userHighlight),
               };
               return (
                 <tr key={index} style={rowStyle}>
                   <td style={pageStyles.td}>
                     {item.posicao}º
-                    {item.avatar && (
-                      <img src={item.avatar} alt="Avatar" style={{ width: 32, height: 32, borderRadius: '50%', marginLeft: 100, verticalAlign: 'middle', border: isUser ? '2px solid #2d9cdb' : '1px solid #ccc' }} />
-                    )}
                   </td>
-                  <td style={pageStyles.td}>{item.nome}</td>
-                  <td style={pageStyles.td}>{item.nota.toFixed(2)}</td>
+                  <td style={{ ...pageStyles.td, display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    {item.avatar && (
+                      <img src={item.avatar} alt="Avatar" style={{ width: 36, height: 36, borderRadius: '50%', border: '2px solid var(--primary)' }} />
+                    )}
+                    {item.nome}
+                  </td>
+                  <td style={{...pageStyles.td, fontWeight: '600' }}>{item.nota.toFixed(2)}</td>
                 </tr>
               );
             })}
@@ -282,11 +311,13 @@ function Ranking() {
         </table>
       )}
 
-      <div style={{ marginTop: '2rem', textAlign: 'center' }}>
-        <Link to={isLoggedIn ? "/formulario" : "/login"} className="global-button">
-          Cadastre seu Gabarito
-        </Link>
-      </div>
+      {!usuarioInscrito && (
+        <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+          <Link to={isLoggedIn ? `/formulario?concurso=${id}` : "/login"} className="global-button">
+            Participe! Envie seu Gabarito
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,126 @@
-.header {
-  position: sticky;
-  top: 0;
+/* Remove o 'nav-link-cta' antigo que estava em global.css, 
+   pois 'global-button' já faz esse papel.
+   Seu 'global.css' já deve ter 'global-navbar', 'brand', 'nav-link' e 'global-button'.
+   Estes são os estilos *adicionais* ou *substitutos*.
+*/
+
+/* --- Botão Secundário (Ex: Login) --- */
+.nav-link-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  background-color: transparent;
+  color: var(--text-medium); /* Cor de texto padrão */
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 600;
+  border: 2px solid var(--border); /* Borda sutil */
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.nav-link-secondary:hover {
+  background-color: var(--beige-contrast);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+/* --- Estilos do Dropdown --- */
+.dropdown-wrapper {
+  position: relative;
+}
+
+.dropdown-toggle {
+  /* Remove estilos de botão e o faz parecer um link */
+  background: transparent;
+  border: none;
+  color: var(--text-medium);
+  font-weight: 600;
+  font-size: 1rem;
+  font-family: inherit; /* Garante a mesma fonte */
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.dropdown-toggle:hover {
+  color: var(--primary);
+  background-color: var(--beige-contrast);
+}
+
+/* Seta (Chevron) */
+.chev {
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid currentColor; /* Pega a cor do texto do pai */
+  transition: transform 0.3s ease;
+}
+
+.chev.open {
+  transform: rotate(180deg);
+}
+
+/* Menu Dropdown */
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 10px); /* 10px abaixo do botão */
+  right: 0;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 20px var(--shadow);
+  min-width: 200px;
+  padding: 8px 0;
+  z-index: 1001;
+  
+  /* Animação */
+  opacity: 0;
+  transform: translateY(10px);
+  visibility: hidden;
+  transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
+}
+
+.dropdown-menu.show {
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+}
+
+/* Itens do Menu */
+.dropdown-item {
+  display: block;
   width: 100%;
-  z-index: 1000;
+  padding: 12px 16px;
+  color: var(--text-medium);
+  text-decoration: none;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  box-sizing: border-box; /* Garante que o padding não quebre o layout */
+}
+
+.dropdown-item:hover {
+  background-color: var(--beige-contrast);
+  color: var(--primary);
+}
+
+/* Item de "Sair" com cor de perigo */
+.dropdown-item-logout {
+  color: #c00; /* Vermelho para "Sair" */
+}
+
+.dropdown-item-logout:hover {
+  background-color: #fbeeee;
+  color: #a00;
 }

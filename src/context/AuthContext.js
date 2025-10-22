@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { getApiUrl, authFetch } from '../api';
-import { setToken, getToken, removeToken, isTokenValid } from '../utils/jwt';
+import { setToken, getToken, removeToken, isTokenValid, getRoleFromToken, getUserFromToken } from '../utils/jwt';
 
 const AuthContext = createContext();
 
@@ -28,6 +28,11 @@ export function AuthProvider({ children }) {
           setLoading(false);
         });
     } else {
+      // If token exists but backend not reachable, try to seed minimal user from token payload
+      if (token) {
+        const seeded = getUserFromToken(token);
+        if (seeded) setUser(seeded);
+      }
       setLoading(false);
     }
   }, []);
@@ -50,10 +55,13 @@ export function AuthProvider({ children }) {
           const usuario = await userRes.json();
           setUser(usuario);
         } else {
-          setUser(null);
+          // fallback to token-derived user
+          const seeded = getUserFromToken(token);
+          setUser(seeded || null);
         }
       } catch {
-        setUser(null);
+        const seeded = getUserFromToken(token);
+        setUser(seeded || null);
       }
       return true;
     }
@@ -63,6 +71,26 @@ export function AuthProvider({ children }) {
   function logout() {
     removeToken();
     setUser(null);
+  }
+
+  // Refresh user data from backend (returns true if refreshed)
+  async function refreshUser() {
+    const token = getToken();
+    if (!token) return false;
+    try {
+      const res = await authFetch('/auth');
+      if (!res.ok) return false;
+      const data = await res.json();
+      setUser(data);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  // optimistic local update of user object
+  function updateUser(patch) {
+    setUser(prev => ({ ...(prev || {}), ...patch }));
   }
 
   async function cadastro(data, isAdmin = false) {
@@ -76,7 +104,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, cadastro, isLoggedIn: !!user }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, cadastro, isLoggedIn: !!user, isAdmin: (user?.role && String(user.role).toLowerCase() === 'Admin') || Boolean(getRoleFromToken(getToken()) === 'Admin'), refreshUser, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

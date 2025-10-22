@@ -1,392 +1,497 @@
 // src/pages/Formulario.js
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { usePayment } from '../context/PaymentContext';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-// Supondo que globalStyles.js está em ../styles/globalStyles.js
-// styles moved to src/pages/global.css (CSS variables + utility classes)
 import { useConcursos } from '../context/ConcursosContext';
+import { authFetch } from '../api'; // Importar o authFetch
 
 // --- ESTILOS ESPECÍFICOS DA PÁGINA ---
 const pageStyles = {
-  formContainer: {
-    maxWidth: '700px',
-    margin: '2rem auto',
-    padding: '40px',
-  },
-  formGroup: {
-    marginBottom: '1.5rem',
-  },
-  label: {
-    fontWeight: '600',
-    marginBottom: '8px',
-    display: 'block',
-    color: 'var(--text-dark)',
-  },
-  inputBase: {
-    width: '100%',
-    padding: '12px',
-    borderRadius: '8px',
-    border: `2px solid var(--border)`,
-    backgroundColor: 'var(--background-light)',
-    fontSize: '1rem',
-    transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
-    outline: 'none',
-  },
-  inputFocus: {
-    borderColor: 'var(--primary)',
-    boxShadow: `0 0 0 3px rgba(124, 92, 59, 0.15)`,
-  },
-  helperText: {
-    fontSize: '0.85rem',
-    color: 'var(--text-medium)',
-    marginTop: '6px',
-  },
-  buttonDisabled: {
-    backgroundColor: 'var(--text-medium)',
-    cursor: 'not-allowed',
-    boxShadow: 'none',
-  }
+  formContainer: {
+    maxWidth: '700px',
+    margin: '2rem auto',
+    padding: '40px',
+  },
+  formGroup: {
+    marginBottom: '1.5rem',
+  },
+  label: {
+    fontWeight: '600',
+    marginBottom: '8px',
+    display: 'block',
+    color: 'var(--text-dark)',
+  },
+  inputBase: {
+    width: '100%',
+    padding: '12px',
+    borderRadius: '8px',
+    border: `2px solid var(--border)`,
+    backgroundColor: 'var(--background-light)',
+    fontSize: '1rem',
+    transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
+    outline: 'none',
+  },
+  inputFocus: {
+    borderColor: 'var(--primary)',
+    boxShadow: `0 0 0 3px rgba(124, 92, 59, 0.15)`,
+  },
+  buttonDisabled: {
+    backgroundColor: 'var(--text-medium)',
+    cursor: 'not-allowed',
+    boxShadow: 'none',
+  },
+  // Estilos para o gabarito por disciplina
+  fieldsetDisciplina: {
+    border: '1px solid #ddd',
+    padding: '16px 24px 24px 24px',
+    borderRadius: '8px',
+    margin: 0,
+  },
+  legendDisciplina: {
+    fontWeight: 'bold',
+    fontSize: '1.2rem',
+    color: 'var(--primary, #333)',
+    padding: '0 8px',
+    width: 'auto',
+    margin: '0 0 0 16px',
+  },
+  // Estilos para as perguntas e opções
+  questaoContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
+  },
+  questaoCard: {
+    padding: '16px',
+    background: '#fff',
+    border: '1px solid var(--border)',
+    borderRadius: '8px',
+  },
+  questaoTexto: {
+    fontWeight: '600',
+    color: 'var(--text-dark)',
+    marginBottom: '12px',
+    lineHeight: '1.5',
+    fontSize: '1.1rem',
+  },
+  opcoesContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px',
+  },
+  opcaoLabel: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '12px',
+    borderRadius: '6px',
+    border: '1px solid var(--border)',
+    cursor: 'pointer',
+    transition: 'background-color 0.2s ease, border-color 0.2s ease',
+  },
+  opcaoLabelSelected: {
+    backgroundColor: 'var(--beige-contrast)',
+    borderColor: 'var(--primary)',
+    fontWeight: '600',
+  }
 };
 
 function Formulario() {
-  const { isLoggedIn } = useAuth();
-  const navigate = useNavigate();
+  const { isLoggedIn, user } = useAuth();
+  const navigate = useNavigate();
 
-  React.useEffect(() => {
-    if (!isLoggedIn) {
-      navigate('/login');
-    }
-  }, [isLoggedIn, navigate]);
+  useEffect(() => {
+    if (!isLoggedIn) {
+      navigate('/login');
+    }
+  }, [isLoggedIn, navigate]);
 
-  const { concursos } = useConcursos();
-  const { paidConcursoIds, confirmPayment } = usePayment();
-  // Detecta se é gabarito definitivo via query param
-  const params = new URLSearchParams(window.location.search);
-  const isDefinitivo = params.get('definitivo') === 'true';
-  const concursoParam = params.get('concurso');
+  const { concursos } = useConcursos();
+  const { paidConcursoIds, confirmPayment } = usePayment();
+  const params = new URLSearchParams(window.location.search);
+  const isDefinitivo = params.get('definitivo') === 'true';
+  const concursoParam = params.get('concurso'); 
 
-  
-  // --- ESTADOS DO FORMULÁRIO ---
-  const [formData, setFormData] = useState({
-    nome: '',
-    concurso: concursoParam || '',
-    gabarito: [],
-    avatar: '', // url base64 ou nome do avatar pré-definido
-  });
-  const [avatarPreview, setAvatarPreview] = useState('');
-  const avatarList = [
-    '/avatars/avatar1.png',
-    '/avatars/avatar2.png',
-    '/avatars/avatar3.png',
-    '/avatars/avatar4.png',
-    '/avatars/avatar5.png',
-    '/avatars/avatar6.png',
-    '/avatars/avatar7.png',
-    '/avatars/avatar8.png',
-  ];
-  // Estado para busca e filtro de concursos
-  const [buscaConcurso, setBuscaConcurso] = useState('');
-  const concursosFiltrados = buscaConcurso
-    ? concursos.filter(c => c.nome.toLowerCase().includes(buscaConcurso.toLowerCase()))
-    : concursos;
-  const [isLoading, setIsLoading] = useState(false);
-  // Estado para controlar o foco de cada campo
-  const [focus, setFocus] = useState({});
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [highlightedIdx, setHighlightedIdx] = useState(-1);
-  const inputRef = useRef();
+  
+  const [formData, setFormData] = useState({
+    concurso: concursoParam || '',
+    gabarito: [],
+    tipoConcorrencia: '',
+  });
+  
+  const [concursoDetalhado, setConcursoDetalhado] = useState(null);
+  const [pageLoading, setPageLoading] = useState(true);
+  const [pageError, setPageError] = useState('');
+  
+  const [isLoading, setIsLoading] = useState(false); 
 
-  const handleFocus = (field) => setFocus({ ...focus, [field]: true });
-  const handleBlur = (field) => setFocus({ ...focus, [field]: false });
+  useEffect(() => {
+    if (!concursoParam) {
+      setPageError('Nenhum concurso selecionado. Volte e escolha um concurso.');
+      setPageLoading(false);
+      return;
+    }
 
-  const handleChange = (e) => {
-    const { name, value, files } = e.target;
-    if (name === 'avatar' && files && files[0]) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData(prev => ({ ...prev, avatar: reader.result }));
-        setAvatarPreview(reader.result);
-      };
-      reader.readAsDataURL(files[0]);
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
-      if (name === 'avatar') setAvatarPreview(value);
-    }
-  };
+    const fetchConcursoCompleto = async () => {
+      setPageLoading(true);
+      setPageError('');
+      setConcursoDetalhado(null); 
 
-  const handleGabaritoChange = (questaoIdx, alternativa) => {
-    setFormData(prev => {
-      const novoGabarito = [...prev.gabarito];
-      novoGabarito[questaoIdx] = alternativa;
-      return { ...prev, gabarito: novoGabarito };
-    });
-  };
+      try {
+        const res = await authFetch(`/Concurso/${concursoParam}/completo`);
+        if (res.ok) {
+          const data = await res.json();
+          setConcursoDetalhado(data);
+        } else {
+          const txt = await res.text();
+          setPageError('Não foi possível carregar os detalhes do concurso. ' + txt);
+          console.error("Erro ao buscar concurso completo:", txt);
+        }
+      } catch (err) {
+        setPageError('Erro de rede ao carregar concurso.');
+        console.error(err);
+      } finally {
+        setPageLoading(false);
+      }
+    };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setIsLoading(true);
+    fetchConcursoCompleto();
+  }, [concursoParam]); 
 
-    // Monta o JSON para envio
-    const concursoSelecionado = concursos.find(c => String(c.id) === String(formData.concurso));
-    const dadosEnvio = {
-      usuario: {
-        nome: formData.nome,
-        avatar: formData.avatar,
-      },
-      concurso: {
-        id: concursoSelecionado?.id,
-        nome: concursoSelecionado?.nome,
-        organizadora: concursoSelecionado?.organizadora,
-        dataProva: concursoSelecionado?.dataProva,
-        vagas: concursoSelecionado?.vagas,
-        qtdQuestoes: concursoSelecionado?.qtdQuestoes,
-      },
-      gabarito: formData.gabarito,
-      definitivo: isDefinitivo,
-    };
-    if (isDefinitivo) {
-      // Simula envio especial para backend
-      setTimeout(() => {
-        console.log("Gabarito definitivo enviado:", JSON.stringify(dadosEnvio, null, 2));
-        setIsLoading(false);
-        alert('Gabarito definitivo cadastrado com sucesso!');
-        navigate('/concursos');
-      }, 1500);
-    } else {
-      // Variável booleana para simular admin (troque para true para testar)
-  const isAdmin = false;
-      setTimeout(() => {
-        console.log("JSON para envio:", JSON.stringify(dadosEnvio, null, 2));
-        setIsLoading(false);
-        if (isAdmin || paidConcursoIds.includes(concursoSelecionado?.id)) {
-          // Redireciona para o ranking do concurso cadastrado
-          navigate(`/ranking/${concursoSelecionado?.id}`);
-        } else {
-          navigate('/checkout');
-        }
-      }, 1500);
-    }
-  };
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
-  // Obter concurso selecionado
-  const concursoSelecionado = concursos.find(c => String(c.id) === String(formData.concurso));
-  const qtdQuestoes = concursoSelecionado?.qtdQuestoes ? Number(concursoSelecionado.qtdQuestoes) : 0;
-  const alternativas = ['A', 'B', 'C', 'D', 'E'];
+  const handleGabaritoChange = (questaoIdx, alternativa) => {
+    setFormData(prev => {
+      const novoGabarito = [...prev.gabarito];
+      novoGabarito[questaoIdx] = alternativa;
+      return { ...prev, gabarito: novoGabarito };
+    });
+  };
 
-  // Agrupar questões em colunas de 20
-  const gruposQuestoes = [];
-  for (let i = 0; i < qtdQuestoes; i += 20) {
-    gruposQuestoes.push(Array.from({ length: Math.min(20, qtdQuestoes - i) }, (_, idx) => i + idx));
-  }
+  const concursoBase = concursos.find(c => String(c.id) === String(formData.concurso));
+  
+  const concursoSelecionado = useMemo(() => {
+    if (!concursoBase && !concursoDetalhado) return null;
+    return {
+      ...concursoBase,   
+      ...concursoDetalhado, 
+    };
+  }, [concursoBase, concursoDetalhado]);
 
-  // Autocomplete avançado: navegação por teclado
-  const handleInputKeyDown = (e) => {
-    if (!showSuggestions || concursosFiltrados.length === 0) return;
-    if (e.key === 'ArrowDown') {
-      setHighlightedIdx(idx => Math.min(idx + 1, concursosFiltrados.length - 1));
-    } else if (e.key === 'ArrowUp') {
-      setHighlightedIdx(idx => Math.max(idx - 1, 0));
-    } else if (e.key === 'Enter' && highlightedIdx >= 0) {
-      const concursoSelecionado = concursosFiltrados[highlightedIdx];
-      setFormData(prev => ({ ...prev, concurso: concursoSelecionado.id }));
-      setBuscaConcurso(concursoSelecionado.nome);
-      setShowSuggestions(false);
-      setHighlightedIdx(-1);
-      inputRef.current.blur();
-    }
-  };
+  const totalQuestoes = useMemo(() => {
+    if (!concursoSelecionado || !concursoSelecionado.disciplinas) return 0;
+    return concursoSelecionado.disciplinas.reduce((acc, d) => acc + (d.perguntas?.length || 0), 0);
+  }, [concursoSelecionado]);
 
-  return (
-    <div className="page-content">
-      <div style={{
-        ...pageStyles.formContainer,
-        border: isDefinitivo ? '3px solid #2d9cdb' : undefined,
-        background: isDefinitivo ? '#eaf6fb' : undefined,
-      }}>
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <h1 className="global-h1">{isDefinitivo ? '📝 Gabarito Definitivo' : '📝 Enviar Gabarito'}</h1>
-          {isDefinitivo ? (
-            <p style={{ color: '#2d9cdb', fontWeight: 'bold' }}>Este gabarito será usado como base para o cálculo da nota de corte do concurso.</p>
-          ) : (
-            <p>Preencha os dados abaixo para calcular sua nota e entrar no ranking.</p>
-          )}
-        </div>
+  const totalVagas = useMemo(() => {
+    if (!concursoSelecionado) return 0;
+    return (concursoSelecionado.vagasAmpla || 0) + 
+           (concursoSelecionado.vagasPPP || 0) + 
+           (concursoSelecionado.vagasPCD || 0) + 
+           (concursoSelecionado.vagasPI || 0);
+  }, [concursoSelecionado]);
 
-        <form onSubmit={handleSubmit}>
-          <div style={pageStyles.formGroup}>
-            <label style={pageStyles.label}>Selecione um Guerreiro</label>
-            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 12 }}>
-              {avatarList.map((avatar, idx) => (
-                <label key={avatar} style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <input
-                    type="radio"
-                    name="avatar"
-                    value={avatar}
-                    checked={formData.avatar === avatar}
-                    onChange={handleChange}
-                    style={{ marginBottom: 4 }}
-                  />
-                  <div style={{ width: 56, height: 56, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', borderRadius: '50%', border: formData.avatar === avatar ? '2px solid #2d9cdb' : '1px solid #ccc', overflow: 'hidden' }}>
-                    <img src={avatar} alt={`Avatar ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                  </div>
-                </label>
-              ))}
-              <label style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <input
-                  type="file"
-                  name="avatar"
-                  accept="image/*"
-                  onChange={handleChange}
-                  style={{ display: 'none' }}
-                  id="avatar-upload"
-                />
-                <span style={{ fontSize: 12, marginBottom: 4 }}>Escolher imagem</span>
-                <button type="button" onClick={() => document.getElementById('avatar-upload').click()} style={{ padding: '4px 12px', borderRadius: 6, border: '1px solid #ccc', background: '#f7f7f7', cursor: 'pointer' }}>Upload</button>
-                {avatarPreview && (
-                  <div style={{ width: 120, height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', borderRadius: '50%', border: '2px solid #2d9cdb', overflow: 'hidden', marginTop: 6 }}>
-                    <img src={avatarPreview} alt="Avatar preview" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                  </div>
-                )}
-              </label>
-            </div>
-          </div>
-          <div style={pageStyles.formGroup}>
-            <label htmlFor="nome" style={pageStyles.label}>Seu Nome ou Apelido</label>
-            <input
-              id="nome"
-              name="nome"
-              type="text"
-              value={formData.nome}
-              onChange={handleChange}
-              onFocus={() => handleFocus('nome')}
-              onBlur={() => handleBlur('nome')}
-              placeholder="Como você quer aparecer no ranking?"
-              className="input-base"
-              style={{ ...(focus.nome && pageStyles.inputFocus) }}
-              required
-            />
-          </div>
 
-          <div style={pageStyles.formGroup}>
-            <label htmlFor="concurso" style={pageStyles.label}>Selecione o Concurso</label>
-            <input
-              id="concurso-busca"
-              type="text"
-              placeholder="Digite para buscar..."
-              value={buscaConcurso}
-              onChange={e => {
-                setBuscaConcurso(e.target.value);
-                setShowSuggestions(true);
-                setHighlightedIdx(-1);
-              }}
-              onFocus={() => setShowSuggestions(true)}
-              onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-              onKeyDown={handleInputKeyDown}
-              className="input-base"
-              autoComplete="off"
-              ref={inputRef}
-            />
-            {showSuggestions && concursosFiltrados.length > 0 && (
-              <ul style={{
-                listStyle: 'none',
-                margin: 0,
-                padding: 0,
-                border: '1px solid #eee',
-                borderRadius: 8,
-                background: '#fff',
-                maxHeight: 180,
-                overflowY: 'auto',
-                position: 'absolute',
-                zIndex: 10,
-                width: '100%',
-                boxShadow: '0 2px 8px #eee',
-              }}>
-                {concursosFiltrados.map((c, idx) => (
-                  <li
-                    key={c.id}
-                    onMouseDown={() => {
-                      setFormData(prev => ({ ...prev, concurso: c.id }));
-                      setBuscaConcurso(c.nome);
-                      setShowSuggestions(false);
-                      setHighlightedIdx(-1);
-                    }}
-                    style={{
-                      padding: '10px 16px',
-                      background: highlightedIdx === idx ? '#eaf6fb' : '#fff',
-                      color: highlightedIdx === idx ? 'var(--primary)' : 'var(--text-dark)',
-                      cursor: 'pointer',
-                      fontWeight: highlightedIdx === idx ? 'bold' : 'normal',
-                    }}
-                    onMouseEnter={() => setHighlightedIdx(idx)}
-                  >
-                    {c.nome}
-                  </li>
-                ))}
-              </ul>
-            )}
-            {showSuggestions && concursosFiltrados.length === 0 && (
-              <div style={{ color: '#e74c3c', marginTop: 8 }}>Nenhum concurso encontrado.</div>
-            )}
-          </div>
-          <div style={pageStyles.formGroup}>
-            <label htmlFor="tipoConcorrencia" style={pageStyles.label}>Tipo de Concorrência</label>
-            <select
-              id="tipoConcorrencia"
-              name="tipoConcorrencia"
-              value={formData.tipoConcorrencia || ''}
-              onChange={handleChange}
-              className="input-base"
-              required
-            >
-              <option value="">Selecione...</option>
-              <option value="Ampla">Ampla</option>
-              <option value="PPP">PPP</option>
-              <option value="PCD">PCD</option>
-              <option value="Indigena">Indígena</option>
-            </select>
-          </div>
+  // ==================================================================
+  // FUNÇÃO HANDLESUBMIT ATUALIZADA
+  // ==================================================================
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setIsLoading(true);
 
-          {qtdQuestoes > 0 && (
-            <div style={{ margin: '32px 0' }}>
-              <label style={pageStyles.label}>Preencha seu gabarito:</label>
-              <div style={{ display: 'flex', gap: '32px', flexWrap: 'wrap' }}>
-                {gruposQuestoes.map((grupo, colIdx) => (
-                  <div key={colIdx} style={{ minWidth: 120 }}>
-                    {grupo.map((qIdx) => (
-                      <div key={qIdx} style={{ marginBottom: 12 }}>
-                        <span style={{ fontWeight: 600, marginRight: 8 }}>Q{qIdx + 1}</span>
-                        {alternativas.map(alt => (
-                          <label key={alt} style={{ marginRight: 8 }}>
-                            <input
-                              type="radio"
-                              name={`questao-${qIdx}`}
-                              value={alt}
-                              checked={formData.gabarito[qIdx] === alt}
-                              onChange={() => handleGabaritoChange(qIdx, alt)}
-                              required={qIdx === 0}
-                            /> {alt}
-                          </label>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+    if (!concursoSelecionado) {
+      alert("Erro: Concurso não foi carregado.");
+      setIsLoading(false);
+      return;
+    }
 
-          <button 
-            type="submit" 
-            className={isLoading ? 'global-button-disabled' : 'global-button'}
-            disabled={isLoading}
-          >
-            {isLoading ? 'Enviando...' : (isDefinitivo ? 'Cadastrar Gabarito Definitivo' : 'Enviar e Ver Minha Posição')}
-          </button>
-        </form>
-      </div>
-    </div>
-  );
+    if (isDefinitivo) {
+      // --- LÓGICA DO GABARITO DEFINITIVO (MANTIDA COMO MOCK) ---
+      // A API fornecida (/api/RespostaUsuario) não parece ser para
+      // o gabarito definitivo. Mantendo a lógica antiga de mock.
+      
+      // Este é o payload antigo, apenas para fins de log
+      const dadosEnvioDefinitivo = {
+        concurso: {
+          id: concursoSelecionado?.id,
+          nome: concursoSelecionado?.nome,
+          organizadora: concursoSelecionado?.banca || concursoSelecionado?.organizadora,
+          dataProva: concursoSelecionado?.dataProva,
+          vagasAmpla: concursoSelecionado?.vagasAmpla,
+          vagasPPP: concursoSelecionado?.vagasPPP,
+          vagasPCD: concursoSelecionado?.vagasPCD,
+          vagasPI: concursoSelecionado?.vagasPI,
+          qtdQuestoes: totalQuestoes,
+        },
+        gabarito: formData.gabarito,
+        tipoConcorrencia: formData.tipoConcorrencia,
+        definitivo: isDefinitivo,
+        usuarioId: user ? user.id : null, 
+      };
+
+      setTimeout(() => {
+        console.log("Gabarito definitivo enviado (MOCK):", JSON.stringify(dadosEnvioDefinitivo, null, 2));
+        setIsLoading(false);
+        alert('Gabarito definitivo cadastrado com sucesso!');
+        navigate('/concursos');
+      }, 1500);
+
+    } else {
+      // --- LÓGICA DE ENVIO DO GABARITO DO USUÁRIO (ATUALIZADA) ---
+      
+      // 1. Mapear o gabarito (flat array de letras) para o formato da API
+      let currentQuestaoIdx = 0;
+      const disciplinasPayload = concursoSelecionado.disciplinas.map(disciplina => ({
+        disciplinaId: disciplina.id,
+        perguntas: disciplina.perguntas.map(pergunta => {
+          
+          const selectedLetter = formData.gabarito[currentQuestaoIdx];
+          let selectedOpcaoId = null;
+
+          if (selectedLetter && pergunta.opcoes) {
+            // Converte a letra (A, B, C...) para o índice do array (0, 1, 2...)
+            const optionIndex = selectedLetter.charCodeAt(0) - 65;
+            
+            if (pergunta.opcoes[optionIndex]) {
+              // Pega o ID da opção selecionada
+              selectedOpcaoId = pergunta.opcoes[optionIndex].id;
+            }
+          }
+          
+          currentQuestaoIdx++; // Avança o índice global para a próxima questão
+
+          return {
+            perguntaId: pergunta.id,
+            opcaoId: selectedOpcaoId
+          };
+        })
+      }));
+
+      // 2. Montar o payload final EXATAMENTE como pedido pela API
+      const apiPayload = {
+        usuarioId: user ? parseInt(user.id, 10) : 0,
+        concursoId: parseInt(concursoSelecionado.id, 10),
+        disciplinas: disciplinasPayload
+      };
+      
+      console.log("Enviando para /api/RespostaUsuario/gabarito:", JSON.stringify(apiPayload, null, 2));
+
+      // 3. Fazer a chamada de API real (substituindo o setTimeout)
+      authFetch('/api/RespostaUsuario/gabarito', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(apiPayload)
+      })
+      .then(res => {
+        if (res.ok) {
+          // Sucesso
+          console.log("Gabarito de usuário enviado com sucesso.");
+          // Lógica original de navegação pós-sucesso
+          const isAdmin = false; 
+          if (isAdmin || paidConcursoIds.includes(concursoSelecionado?.id)) {
+            navigate(`/ranking/${concursoSelecionado?.id}`);
+          } else {
+            // navigate('/checkout'); // Ative para paywall
+            navigate(`/ranking/${concursoSelecionado?.id}`); // Linha de teste
+          }
+        } else {
+          // Erro do servidor
+          return res.text().then(text => {
+            throw new Error(text || 'Falha ao enviar gabarito. O servidor não retornou um erro específico.');
+          });
+        }
+      })
+      .catch(err => {
+        // Erro de rede ou erro do .then()
+        console.error("Erro ao enviar gabarito:", err);
+        alert(`Erro ao enviar seu gabarito: ${err.message}`);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+    }
+  };
+  // ==================================================================
+  // FIM DA FUNÇÃO HANDLESUBMIT
+  // ==================================================================
+  
+
+  // --- LÓGICA DE RENDERIZAÇÃO DE GABARITO (ATUALIZADA) ---
+  // A variável 'alternativas' (['A', 'B', 'C']) foi REMOVIDA.
+  
+  // Verifica se o concurso tem disciplinas com perguntas
+  const hasDisciplinas = concursoSelecionado && concursoSelecionado.disciplinas && concursoSelecionado.disciplinas.length > 0;
+  
+  let globalQuestaoIdx = 0;
+  // --- Fim da Lógica de Renderização ---
+
+
+  return (
+    <div className="page-content">
+      <div style={{
+        ...pageStyles.formContainer,
+        border: isDefinitivo ? '3px solid #2d9cdb' : undefined,
+        background: isDefinitivo ? '#eaf6fb' : undefined,
+      }}>
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <h1 className="global-h1">{isDefinitivo ? '📝 Gabarito Definitivo' : '📝 Enviar Gabarito'}</h1>
+          {isDefinitivo ? (
+            <p style={{ color: '#2d9cdb', fontWeight: 'bold' }}>Este gabarito será usado como base para o cálculo da nota de corte.</p>
+          ) : (
+            <p>Preencha os dados abaixo para calcular sua nota e entrar no ranking.</p>
+          )}
+        </div>
+
+        {/* --- BLOCO DE LOADING, ERRO OU INFO DO CONCURSO --- */}
+        {pageLoading && (
+          <div style={{ textAlign: 'center', margin: '32px 0', padding: '20px' }} className="global-card">
+            <p style={{ fontSize: '1.2rem', color: 'var(--primary)', margin: 0 }}>Carregando prova...</p>
+          </div>
+        )}
+        {pageError && (
+          <div style={{ color: '#c00', margin: '1rem 0', padding: '20px', background: '#fbeeee', borderRadius: '8px', textAlign: 'center' }}>
+            <strong>Erro:</strong> {pageError}
+          </div>
+        )}
+        {!pageLoading && !pageError && concursoSelecionado && (
+          <div className="global-card" style={{ marginBottom: '2rem', background: 'var(--beige-contrast)' }}>
+            <h2 style={{...pageStyles.legendDisciplina, margin: 0, padding: 0, fontSize: '1.5rem'}}>{concursoSelecionado.nome}</h2>
+            <p style={{ margin: '8px 0 0 0' }}><strong>Banca:</strong> {concursoSelecionado.banca}</p>
+            <p style={{ margin: '4px 0 0 0' }}><strong>Vagas Totais:</strong> {totalVagas}</p>
+            <p style={{ margin: '4px 0 0 0' }}><strong>Questões:</strong> {totalQuestoes}</p>
+          </div>
+        )}
+        {/* --- FIM DO BLOCO --- */}
+
+
+        {/* O formulário só é exibido se não houver loading ou erro */}
+        {!pageLoading && !pageError && concursoSelecionado && (
+          <form onSubmit={handleSubmit}>
+            
+            <div style={pageStyles.formGroup}>
+              <label htmlFor="tipoConcorrencia" style={pageStyles.label}>Selecione seu Tipo de Concorrência</label>
+              <select
+                id="tipoConcorrencia"
+                name="tipoConcorrencia"
+                value={formData.tipoConcorrencia || ''}
+                onChange={handleChange}
+                className="input-base"
+                required
+                disabled={isDefinitivo} // Desativa se for gabarito definitivo
+              >
+                <option value="">Selecione...</option>
+                <option value="Ampla">Ampla Concorrência</option>
+                <option value="PPP">PPP (Pretos/Pardos)</option>
+                <option value="PCD">PCD (Pessoa c/ Def.)</option>
+                <option value="Indigena">Indígena</option>
+              </select>
+            </div>
+
+            {/* --- BLOCO DE RENDERIZAÇÃO DE GABARITO (ATUALIZADO) --- */}
+            {/* A checagem de 'alternativas.length > 0' foi removida */}
+            {hasDisciplinas ? (
+              <div style={{ margin: '32px 0' }}>
+                <label style={pageStyles.label}>Preencha seu gabarito:</label>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                  {concursoSelecionado.disciplinas.map((disciplina, dIdx) => {
+                    // Reseta o contador global *antes* do map de disciplinas
+                    // globalQuestaoIdx = 0; // -> Comentado. O índice deve ser contínuo.
+                    
+                    return (
+                      <fieldset key={dIdx} style={pageStyles.fieldsetDisciplina}>
+                        <legend style={pageStyles.legendDisciplina}>
+                          {disciplina.nome}
+                        </legend>
+                        <div style={pageStyles.questaoContainer}>
+                          {disciplina.perguntas.map((pergunta, pIdx) => {
+                            const currentGlobalIdx = globalQuestaoIdx;
+                            globalQuestaoIdx++;
+
+                            return (
+                              <div key={pIdx} style={pageStyles.questaoCard}>
+                                <p style={pageStyles.questaoTexto}>
+                                  <strong>Q{currentGlobalIdx + 1}: </strong>
+                                  {pergunta.texto || '(Questão sem texto cadastrado)'}
+                                </p>
+                                
+                                <div style={pageStyles.opcoesContainer}>
+                                  {/* --- LÓGICA DE RENDERIZAÇÃO ATUALIZADA --- */}
+                                  {/* Itera sobre as opções da API, não mais sobre 'alternativas' */}
+                                  {pergunta.opcoes && pergunta.opcoes.map((opcao, altIndex) => {
+                                    // Gera a letra dinamicamente (0=A, 1=B, 2=C)
+                                    const altLetter = String.fromCharCode(65 + altIndex);
+                                    const optionText = opcao.texto;
+                                    const isChecked = formData.gabarito[currentGlobalIdx] === altLetter;
+                                    
+                                    return (
+                                      <label 
+                                        key={altIndex} 
+                                        style={isChecked ? {...pageStyles.opcaoLabel, ...pageStyles.opcaoLabelSelected} : pageStyles.opcaoLabel}
+                                      >
+                                        <input
+                                          type="radio"
+                                          name={`questao-${currentGlobalIdx}`}
+                                          value={altLetter} // O valor salvo é a letra (A, B, C...)
+                                          checked={isChecked}
+                                          onChange={() => handleGabaritoChange(currentGlobalIdx, altLetter)}
+                                          required={currentGlobalIdx === 0}
+                                          style={{ flexShrink: 0 }}
+                                        />
+                                        <span>
+T                                      <strong>{altLetter})</strong> {optionText || '(Opção sem texto cadastrado)'}
+                                        </span>
+                                      </label>
+                                    );
+                                  })}
+                                  {/* Mensagem de fallback se a pergunta não tiver opções */}
+                                  {(!pergunta.opcoes || pergunta.opcoes.length === 0) && (
+                                    <p style={{color: 'var(--text-medium)', fontSize: '0.9rem', margin: 0}}>
+                                      Esta pergunta não possui opções cadastradas.
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                D        </div>
+                      </fieldset>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              // Mensagem de fallback se 'disciplinas' estiver vazio
+              <div style={{ color: '#e74c3c', marginTop: '1rem', padding: '10px', background: '#fbeeee', borderRadius: '8px' }}>
+                Este concurso não possui disciplinas ou perguntas cadastradas.
+              </div>
+            )}
+            {/* --- FIM DO BLOCO DE GABARITO --- */}
+
+
+            {/* MENSAGEM DE ERRO 'TIPO DE GABARITO' REMOVIDA */}
+
+
+            <button 
+              type="submit" 
+              className={isLoading ? 'global-button-disabled' : 'global-button'}
+              // Condição de 'disabled' atualizada
+              disabled={isLoading || pageLoading || !concursoSelecionado || !hasDisciplinas}
+style={(isLoading || pageLoading || !concursoSelecionado || !hasDisciplinas) ? pageStyles.buttonDisabled : {}}
+            >
+              {isLoading ? 'Enviando...' : (isDefinitivo ? 'Cadastrar Gabarito Definitivo' : 'Enviar e Ver Minha Posição')}
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default Formulario;
